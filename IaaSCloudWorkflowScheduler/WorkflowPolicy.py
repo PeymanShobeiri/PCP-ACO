@@ -188,10 +188,8 @@ class WorkflowPolicy(object):
                 tmp.append("")
             else:
                 testing = self._resources.getResource(node.getSelectedResource())
-                if self._resources.getResource(node.getSelectedResource()) is not None:
-                    tmp.append(self._resources.getResource(node.getSelectedResource()).getCost())
-                else:
-                    tmp.append(None)
+                tmp.append(self._resources.getResource(node.getSelectedResource()).getCost())
+
 
             rowsList.append(tmp)
 
