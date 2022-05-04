@@ -1,9 +1,10 @@
 import sys
+
 sys.path.append('/Users/apple/Desktop/Create WS-ACO/MyCode')
 from IaaSCloudWorkflowScheduler.WorkflowPolicy import WorkflowPolicy
 from IaaSCloudWorkflowScheduler.Instance import Instance
 from IaaSCloudWorkflowScheduler.WorkflowNode import WorkflowNode
-from math import ceil,floor
+from math import ceil, floor
 
 
 class PcpD2Policy(WorkflowPolicy):
@@ -11,24 +12,23 @@ class PcpD2Policy(WorkflowPolicy):
         super().__init__(g, rs, bw)
 
     class result:
-            cost = None
-            finishTime = None
+        cost = None
+        finishTime = None
 
     class PriorityQueue(object):
         def __init__(self):
             self.queue = []
-  
+
         def __str__(self):
             return ' '.join([str(i) for i in self.queue])
-  
+
         def isEmpty(self):
             return len(self.queue) == 0
-  
+
         def insert(self, data):
             self.queue.append(data)
-            
-  
-        def remove(self):               # check for time complexity !!!
+
+        def remove(self):  # check for time complexity !!!
             try:
                 max = 0
                 for i in range(len(self.queue)):
@@ -55,7 +55,7 @@ class PcpD2Policy(WorkflowPolicy):
             if curStart > criticalParStart:
                 criticalParStart = curStart
                 criticalPar = parentNode
-        
+
         return criticalPar
 
     def findPartialCriticalPath(self, curNode):
@@ -63,7 +63,7 @@ class PcpD2Policy(WorkflowPolicy):
         while True:
             curNode = self.findCriticalParent(curNode)
             if curNode != None:
-                criticalPath.append(WorkflowNode(0,curNode))
+                criticalPath.insert(0, curNode)
             if curNode == None:
                 break
         return criticalPath
@@ -73,7 +73,7 @@ class PcpD2Policy(WorkflowPolicy):
         pathEST = path[0].getEST()
         pathEFT = path[last].getEFT()
         PSD = path[last].getLFT() - pathEST
-        
+
         i = 0
         while i <= last:
             curNode = path[i]
@@ -84,9 +84,10 @@ class PcpD2Policy(WorkflowPolicy):
             curNode.setScheduled()
 
             if i > 0:
-               newEST = path[i-1].getDeadline() + round(float(self.getDataSize(path[i-1] , curNode)) / self._bandwidth)
-               if newEST > curNode.getEST():
-                   curNode.setEST(newEST)
+                newEST = path[i - 1].getDeadline() + round(
+                    float(self.getDataSize(path[i - 1], curNode)) / self._bandwidth)
+                if newEST > curNode.getEST():
+                    curNode.setEST(newEST)
             i += 1
 
     def updateChildrenEST(self, parentNode):
@@ -99,7 +100,7 @@ class PcpD2Policy(WorkflowPolicy):
                     newEST = parentNode.getDeadline() + round(float(child.getDataSize() / self._bandwidth))
                 else:
                     newEST = parentNode.getEFT() + round(float(child.getDataSize()) / self._bandwidth)
-                
+
                 if childNode.getEST() < newEST:
                     childNode.setEST(newEST)
                     childNode.setEFT(int(newEST + round(childNode.getRunTime())))
@@ -115,12 +116,11 @@ class PcpD2Policy(WorkflowPolicy):
                     newLFT = childNode.getEST() - round(float(parent.getDataSize()) / self._bandwidth)
                 else:
                     newLFT = childNode.getLST() - round(float(parent.getDataSize()) / self._bandwidth)
-                
+
                 if parentNode.getLFT() > newLFT:
                     parentNode.setLFT(newLFT)
                     parentNode.setLST(int(newLFT - round(parentNode.getRunTime())))
                     self.updateParentsLFT(parentNode)
-
 
     def assignParents(self, curNode):
         criticalPath = []
@@ -128,22 +128,22 @@ class PcpD2Policy(WorkflowPolicy):
         criticalPath = self.findPartialCriticalPath(curNode)
         if not criticalPath:
             return
-        
+
         self.assignPath(criticalPath)
         for i in range(len(criticalPath)):
             self.updateChildrenEST(criticalPath[i])
             self.updateParentsLFT(criticalPath[i])
-        
+
         for i in range(len(criticalPath)):
             self.assignParents(criticalPath[i])
-        
+
         self.assignParents(curNode)
 
     def distributeDeadline(self):
         self.assignParents(self._graph.getNodes().get(self._graph.getEndId()))
         for node in self._graph.getNodes().values():
             node.setUnscheduled()
-    
+
     def setInstance(self, curNode, curInst):
         start = None
         curStart = int(curInst.getFinishTime())
@@ -157,7 +157,7 @@ class PcpD2Policy(WorkflowPolicy):
                 start += round(float(parent.getDataSize()) / self._bandwidth)
             if start > curStart:
                 curStart = start
-        
+
         curFinish = curStart + round(float(curNode.getInstructionSize()) / curInst.getType().getMIPS())
         curNode.setEST(curStart)
         curNode.setEFT(curFinish)
@@ -167,7 +167,7 @@ class PcpD2Policy(WorkflowPolicy):
         if curInst.getFinishTime() == 0:
             curInst.setStartTime(curStart)
             curInst.setFirstTask(curNode.getId())
-        
+
         curInst.setFinishTime(curFinish)
         curInst.setLastTask(curNode.getId())
         curInst.addTask(curNode)
@@ -190,10 +190,10 @@ class PcpD2Policy(WorkflowPolicy):
                 start += round(float(parent.getDataSize()) / self._bandwidth)
             if start > curStart:
                 curStart = start
-        
-        if finishTime == 0 :
+
+        if finishTime == 0:
             startTime = curStart
-        
+
         r = self.result()
         curFinish = int(curStart + round(float(curNode.getInstructionSize()) / curInst.getType().getMIPS()))
         r.finishTime = curFinish
@@ -201,9 +201,8 @@ class PcpD2Policy(WorkflowPolicy):
             r.cost = sys.maxsize
         else:
             r.cost = float(ceil(float(curFinish - startTime) / float(interval)) * curInst.getType().getCost() - curCost)
-        
+
         return r
-    
 
     def planning(self):
         queue = self.PriorityQueue()
@@ -214,13 +213,13 @@ class PcpD2Policy(WorkflowPolicy):
         for node in self._graph.nodes.values():
             if not node.getId() == self._graph.getStartId() and not node.getId() == self._graph.getEndId():
                 queue.insert(node)
-        
+
         while not queue.isEmpty():
             curNode = queue.remove()
             bestInst = -1
             bestCost = sys.maxsize
 
-            for curInst in range (self._instances.getSize()):
+            for curInst in range(self._instances.getSize()):
                 r = self.checkInstance(curNode, self._instances.getInstance(curInst))
                 if r.cost < bestCost:
                     bestCost = r.cost
@@ -229,7 +228,7 @@ class PcpD2Policy(WorkflowPolicy):
                 elif bestCost < sys.maxsize and r.cost == bestCost and r.finishTime < bestFinish:
                     bestFinish = r.finishTime
                     bestInst = curInst
-            
+
             if bestInst == -1:
                 curRes = self._resources.getSize() - 1
                 # because the cheapest one is the last
@@ -239,7 +238,7 @@ class PcpD2Policy(WorkflowPolicy):
                     if r.cost < sys.maxsize:
                         bestInst = inst.getId()
                         self._instances.addInstance(inst)
-                        break 
+                        break
                     curRes -= 1
             self.setInstance(curNode, self._instances.getInstance(bestInst))
 
@@ -251,7 +250,7 @@ class PcpD2Policy(WorkflowPolicy):
             curEndTime = self._graph.getNodes().get(parent.getId()).getEFT()
             if endTime < curEndTime:
                 endTime = curEndTime
-        
+
         endNode.setEST(endTime)
         endNode.setEFT(endTime)
 
@@ -261,6 +260,7 @@ class PcpD2Policy(WorkflowPolicy):
         self.setRuntimes()
         self.computeESTandEFT(startTime)
         self.computeLSTandLFT(deadline)
+
         self.initializeStartEndNodes(startTime, deadline)
 
         self.distributeDeadline()

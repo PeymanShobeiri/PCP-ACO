@@ -1,7 +1,8 @@
-import PlainFilenameType
-import LinkageType
-import FileType
-import TransferType
+from .PlainFilenameType import PlainFilenameType
+from .LinkageType import LinkageType
+#from .FilenameType import FileType
+#from .TransferType import TransferType
+
 
 class FilenameType(PlainFilenameType):
     def __init__(self):

@@ -2,7 +2,7 @@ import sys
 sys.path.append('/Users/apple/Desktop/Create WS-ACO/MyCode')
 
 from DAG.PlainFilenameType import PlainFilenameType
-from DAG.LinkageType import LinkageType
+#from DAG.LinkageType import LinkageType
 from DAG.StdioType import StdioType
 
 
@@ -33,7 +33,7 @@ class Adag:
         self.__jobList = list
     
     def getChildList(self):
-        self.__childList
+        return self.__childList
     
     def setChildList(self, list):
         self.__childList = list
@@ -100,7 +100,7 @@ class Adag:
     
     class Job:
         def __init__(self):
-            self.__argument= None
+            self.__argument = None
             self.__profileList = []
             self.__stdin = None
             self.__stdout = None

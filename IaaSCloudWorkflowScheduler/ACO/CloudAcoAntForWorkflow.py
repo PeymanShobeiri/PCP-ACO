@@ -3,10 +3,192 @@ from ..Resource import Resource
 from .pyisula.Ant import Ant
 from .pyisula.ConfigurationProvider import ConfigurationProvider
 from .CloudAcoProblemNode import CloudAcoProblemNode
-from .CloudAcoWorkflow import CloudAcoWorkflow
-
+from .CloudAcoEnvironment import CloudAcoEnvironment
+from .pyisula.algorithms.UpdatePheromoneMatrixForMaxMin import UpdatePheromoneMatrixForMaxMin
+from .CloudAcoConfigurationProvider import CloudAcoConfigurationProvider
+from .CloudAcoProblemSolver import CloudAcoProblemSolver
+from .pyisula.algorithms.MaxMinConfigurationProvider import MaxMinConfigurationProvider
+from .CloudAcoPseudoRandomNodeSelection import CloudAcoPseudoRandomNodeSelection
+from .pyisula.algorithms.StartPheromoneMatrix import StartPheromoneMatrix
+from .pyisula.AntColony import AntColony
+from .pyisula.exception.ConfigurationException import ConfigurationException
 import sys
 #CloudAcoWorkflow().antId + 1
+
+
+
+class WorkflowUpdatePheromoneMatrix(UpdatePheromoneMatrixForMaxMin):
+
+    def getNewPheromoneValue(self, ant , pre , next , configurationProvider):
+        cost = CloudAcoAntForWorkflow(ant).getLastSolutionCost()
+        makeSpan = CloudAcoAntForWorkflow(ant).getLastMakeSpan()
+        deadline = self.getEnvironment().getProblemGraph().getDeadline()
+        minCost = CloudAcoConfigurationProvider(configurationProvider).getMinCost()
+        maxCost = CloudAcoConfigurationProvider(configurationProvider).getMaxCost()
+
+        k = 0.0
+
+        if makeSpan > deadline:
+            k = (deadline / makeSpan) + (minCost / maxCost)
+        else:
+            k = 1 + (minCost / cost)
+        
+        return 0.9 * ant.getPheromoneTrailValue(next, pre, self.getEnvironment()) + 0.1 * k
+
+    
+    def getMaximumPheromoneValue(self, configurationProvider):
+        return 1
+
+    def getMinimumPheromoneValue(self, configurationProvider):
+        return 0.0001
+    
+    def validatePheromoneValue(self, v):
+        if v == sys.maxsize or v == None:
+            raise ConfigurationException("The pheromone value calculated is not a valid number: " + v)
+
+    def applyDaemonAction(self, provider):
+        configurationProvider = MaxMinConfigurationProvider(provider)
+        pheromoneMatrix = self.getEnvironment().getPheromoneMatrix()
+
+        matrixRows = len(pheromoneMatrix)
+        matrixColumns = len(pheromoneMatrix[0])
+        t0 = configurationProvider.getEvaporationRatio() * configurationProvider.getInitialPheromoneValue()
+
+        for i in range(matrixRows):
+            for j in range(matrixColumns):
+                newValue = pheromoneMatrix[i][j] * configurationProvider.getEvaporationRatio()
+                if newValue >= self.getMinimumPheromoneValue(configurationProvider):
+                    pheromoneMatrix[i][j] = newValue
+                else:
+                    pheromoneMatrix[i][j] = self.getMinimumPheromoneValue(configurationProvider)
+                
+                self.validatePheromoneValue(pheromoneMatrix[i][j])
+        
+        bestAnt = self.getAntColony().getBestPerformingAnt(self.getEnvironment())
+        bestSolution = bestAnt.getSolution()
+
+        # assigning the pheromon of best solution
+        componentIndex = 1
+        while componentIndex < len(bestSolution):
+            solutionComponent = bestSolution[componentIndex]
+            lastPos = bestSolution[componentIndex - 1]
+            newValue = self.getNewPheromoneValue(bestAnt, lastPos.getId() , solutionComponent, configurationProvider)
+            if newValue <= self.getMaximumPheromoneValue(configurationProvider):
+                bestAnt.setPheromoneTrailValue(lastPos, solutionComponent.getId() , self.getEnvironment(), newValue)
+            else:
+                bestAnt.setPheromoneTrailValue(lastPos, solutionComponent.getId(), self.getEnvironment(),self.getMaximumPheromoneValue(configurationProvider))
+            
+            self.validatePheromoneValue(bestAnt.getPheromoneTrailValue(lastPos, solutionComponent.getId(), self.getEnvironment()))
+            componentIndex += 1 
+
+
+
+
+
+class CloudAcoAntColony(AntColony):
+
+    def __init__(self, numberOfAnts):
+        super().__init__(numberOfAnts)
+        self.__solution = "NOT_FOUND"
+        self.__solutionCost = sys.maxsize
+
+    def createAnt(self, cloudAcoEnvironment):
+        tmp = CloudAcoAntForWorkflow(cloudAcoEnvironment)
+        return tmp
+    
+    def getBestPerformingAnt(self, environment):
+        bestAnt = self.getHive()[0]
+        var3 = self.getHive()
+        bestCost = sys.maxsize
+        for ant in var3:
+            if ant.getLastSolutionCost() < bestCost and ant.isValidAnswer():
+                bestAnt = ant
+                bestCost = ant.getLastSolutionCost()
+        
+        return bestAnt
+    
+    def buildSolutions(self, environment, configurationProvider):
+        if len(self.getHive()) == 0:
+            raise ConfigurationException("Your colony is empty: You have no ants to solve the problem. Have you called the buildColony() method?. Number of ants from configuration provider: " + configurationProvider.getNumberOfAnts())
+        else:
+            for ant in self.getHive():
+                failed = False
+
+                while not ant.isSolutionReady(environment):
+                    try:
+                        ant.selectNextNode(environment, configurationProvider)
+                    except:
+                        failed = True
+                        break
+                
+                if not failed:
+                    ant.setValidAnswer(True)
+                    antCost = ant.getSolutionCost(environment)
+
+                    if self.__solutionCost > antCost and antCost != 0:
+                        self.__solutionCost = antCost
+                        self.__solution = ant.getSolutionAsString()
+                        if ant.isValidAnswer():
+                            print("valid Answer found! cost: " + self.__solutionCost)
+                
+                ant.doAfterSolutionIsReady(environment, configurationProvider)
+            
+            CloudAcoAntForWorkflow().resetCache()
+    
+    def getSolution(self):
+        return self.__solution
+    
+    def getSolutionCost(self):
+        return self.__solutionCost
+        
+
+
+
+
+class CloudAcoWorkflow:
+    antId = 0 
+    def getAntColony(self, configurationProvider):
+        tmp = CloudAcoAntColony(configurationProvider.getNumberOfAnts())
+        return tmp
+
+    def __init__(self, graph, resourceSet, bandwidth, deadline):
+        self.__problemRepresentation = CloudAcoProblemRepresentation(graph, resourceSet, bandwidth, deadline, 10)
+        self.configurationProvider = CloudAcoConfigurationProvider()
+        self.__colony = self.getAntColony(self.configurationProvider)
+        self.__environment = CloudAcoEnvironment(self.__problemRepresentation)
+        self.configurationProvider.setEnvironment(self.__environment)
+        self.__solver = CloudAcoProblemSolver()
+        self.__solver.initialize(self.__environment, self.__colony, self.configurationProvider)
+        startPheromoneMatrix = StartPheromoneMatrix()
+        startPheromoneMatrix.setEnvironment(self.__environment)
+        workflowUpdatePheromoneMatrix = WorkflowUpdatePheromoneMatrix()
+        workflowUpdatePheromoneMatrix.setEnvironment(self.__environment)
+        self.__solver.addCloudACODaemonActions(startPheromoneMatrix, workflowUpdatePheromoneMatrix)
+        self.__solver.getAntColony().addAntPolicies(CloudAcoPseudoRandomNodeSelection())
+        
+        self.__mCloudAcoWorkflow = None
+        
+    def OptimiseWorkFlow(self, graph, resourceSet, bandwidth, deadline):
+        self.__mCloudAcoWorkflow = CloudAcoWorkflow(graph, resourceSet , bandwidth, deadline)
+        return self.__mCloudAcoWorkflow
+    
+    def setLacoSort(self, sortedTaskIds):
+        self.__problemRepresentation.lacoSort(sortedTaskIds)
+        return self.__mCloudAcoWorkflow
+    
+    def solve(self):
+        self.__mCloudAcoWorkflow.solve().solveProblem()
+
+    def printSolution(self):
+        print("Cost: " + self.__mCloudAcoWorkflow.colony.getSolutionCost() + "\n" + self.__mCloudAcoWorkflow.colony.getSolution())
+    
+    def getAntColony(self, configurationProvider):
+        tmp = CloudAcoAntColony(configurationProvider.getNumberOfAnts())
+        return tmp
+    
+
+
+
 
 class CloudAcoAntForWorkflow(Ant):
 

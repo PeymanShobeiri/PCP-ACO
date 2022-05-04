@@ -1,4 +1,4 @@
-
+"""
 from .pyisula.Ant import Ant
 from .pyisula.AntColony import AntColony
 from .CloudAcoAntForWorkflow import CloudAcoAntForWorkflow
@@ -62,3 +62,4 @@ class CloudAcoAntColony(AntColony):
     def getSolutionCost(self):
         return self.__solutionCost
         
+"""

@@ -1,13 +1,15 @@
 import sys
+
 sys.path.append('/Users/apple/Desktop/Create WS-ACO/MyCode')
 from IaaSCloudWorkflowScheduler.WorkflowPolicy import WorkflowPolicy
 
 from queue import Queue
 
+
 class FastestPolicy(WorkflowPolicy):
     def __init__(self, g, rs, bw):
         super().__init__(g, rs, bw)
-    
+
     def schedule(self, startTime, deadline):
         candidateNodes = Queue()
         nodes = self._graph.getNodes()
@@ -16,12 +18,12 @@ class FastestPolicy(WorkflowPolicy):
         childNode = None
 
         self.setRuntimes()
-        curNode =  nodes.get(self._graph.getStartId())
+        curNode = nodes.get(self._graph.getStartId())
         curNode.setAFT(startTime)
         curNode.setScheduled()
         for child in curNode.getChildren():
             candidateNodes.put(child.getId())
-        
+
         while not candidateNodes.empty():
             thisTime = None
             maxTime = None
@@ -32,7 +34,7 @@ class FastestPolicy(WorkflowPolicy):
                 thisTime = parentNode.getAFT()
                 if thisTime > maxTime:
                     maxTime = thisTime
-            
+
             curNode.setAST(maxTime)
             curNode.setAFT(int(maxTime + round(curNode.getRunTime())))
             curNode.setScheduled()
@@ -46,6 +48,6 @@ class FastestPolicy(WorkflowPolicy):
                         isCandidate = False
                 if isCandidate:
                     candidateNodes.put(child.getId())
-        
+
         super().setEndNodeAST()
         return 0

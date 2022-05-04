@@ -1,3 +1,5 @@
+"""
+
 from IaaSCloudWorkflowScheduler.ACO.CloudAcoConfigurationProvider import CloudAcoConfigurationProvider
 from .pyisula.Ant import Ant
 from .pyisula.ConfigurationProvider import ConfigurationProvider
@@ -71,3 +73,4 @@ class WorkflowUpdatePheromoneMatrix(UpdatePheromoneMatrixForMaxMin):
             self.validatePheromoneValue(bestAnt.getPheromoneTrailValue(lastPos, solutionComponent.getId(), self.getEnvironment()))
             componentIndex += 1 
 
+"""

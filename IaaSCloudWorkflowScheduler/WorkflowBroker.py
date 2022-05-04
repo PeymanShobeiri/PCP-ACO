@@ -1,4 +1,5 @@
 import sys
+
 sys.path.append('/Users/apple/Desktop/Create WS-ACO/MyCode')
 from DAG.Adag import Adag
 from DAG.DagUtils import DagUtils
@@ -7,7 +8,8 @@ from IaaSCloudWorkflowScheduler.WorkflowGraph import WorkflowGraph
 from IaaSCloudWorkflowScheduler.ResourceSet import ResourceSet
 from IaaSCloudWorkflowScheduler.Resource import Resource
 from IaaSCloudWorkflowScheduler.ScheduleType import ScheduleType
-from IaaSCloudWorkflowScheduler.FastestPolicy import FastestPolicy
+# from IaaSCloudWorkflowScheduler.FastestPolicy import FastestPolicy
+from FastestPolicy import FastestPolicy
 from IaaSCloudWorkflowScheduler.CheapestPolicy import CheapestPolicy
 from IaaSCloudWorkflowScheduler.PcpPolicyInsertion import PcpPolicyInsertion
 from IaaSCloudWorkflowScheduler.PcpD2Policy import PcpD2Policy
@@ -35,75 +37,66 @@ class WorkflowBroker:
         self.resources.addResource(Resource(9, 0.8, 20))
         self.resources.sort()
 
-
-
-    def __init__(self, wfDescFile, type) :
+    def __init__(self, wfDescFile, type):
         self.interval = 3600
         self.bandwidth = Constants.BANDWIDTH
         self.graph = None
         self.resources = None
         self.policy = None
 
-
         dag = None
         try:
             dag = DagUtils.readWorkflowDescription(wfDescFile)
-        except Exception:
-            print("Error reading Workflow File ")
-        
+        except Exception as e:
+            print("Error reading Workflow File " + '  ' + str(e))
+
         self.graph = WorkflowGraph()
         self.graph.convertDagToWorkflowGraph(dag)
         self.createResourceList()
 
         if type == ScheduleType.Fastest:
-            self.policy = FastestPolicy(self.graph , self.resources, self.bandwidth)
+            self.policy = FastestPolicy(self.graph, self.resources, self.bandwidth)
         elif type == ScheduleType.Cheapest:
-            self.policy = CheapestPolicy(self.graph , self.resources , self.bandwidth)
+            self.policy = CheapestPolicy(self.graph, self.resources, self.bandwidth)
         elif type == ScheduleType.IC_PCP:
-            self.policy = PcpPolicyInsertion(self.graph , self.resources, self.bandwidth)
+            self.policy = PcpPolicyInsertion(self.graph, self.resources, self.bandwidth)
         elif type == ScheduleType.IC_PCPD2:
-            self.policy = PcpD2Policy(self.graph , self.resources, self.bandwidth)
+            self.policy = PcpD2Policy(self.graph, self.resources, self.bandwidth)
         elif type == ScheduleType.List:
-            self.policy = ListPolicy2(self.graph , self.resources, self.bandwidth)
+            self.policy = ListPolicy2(self.graph, self.resources, self.bandwidth)
         elif type == ScheduleType.IC_PCP2:
-            self.policy = PcpPolicy2(self.graph , self.resources, self.bandwidth)
+            self.policy = PcpPolicy2(self.graph, self.resources, self.bandwidth)
         elif type == ScheduleType.IC_PCPD2_2:
-            self.policy = PcpD2Policy2(self.graph , self.resources , self.bandwidth)
+            self.policy = PcpD2Policy2(self.graph, self.resources, self.bandwidth)
         elif type == ScheduleType.List2:
             self.policy = ListPolicy3(self.graph, self.resources, self.bandwidth)
         elif type == ScheduleType.IC_Loss:
-            self.policy = ICLossPolicy2(self.graph , self.resources , self.bandwidth)
-    
-    def schedule(self, startTime, deadline):
-        tmp = self.policy.schedule(startTime , deadline)
+            self.policy = ICLossPolicy2(self.graph, self.resources, self.bandwidth)
+
+    def schedule(self, startTime, deadline) -> float:
+        tmp = self.policy.schedule(startTime, deadline)
         return tmp
-    
+
     def getGraph(self):
         return self.graph
-    
+
     def setGraph(self, graph):
         self.graph = graph
-    
+
     def getResources(self):
         return self.resources
-    
+
     def setResources(self, resources):
         self.resources = resources
-    
+
     def getPolicy(self):
         return self.policy
-    
+
     def setPolicy(self, policy):
         self.policy = policy
-    
+
     def getInterval(self):
-        return self.interval 
-    
+        return self.interval
+
     def getBandwidth(self):
         return self.bandwidth
-
-
-
-
-
-    
