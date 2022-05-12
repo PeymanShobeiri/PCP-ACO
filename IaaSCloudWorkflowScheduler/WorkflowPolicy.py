@@ -70,7 +70,6 @@ class WorkflowPolicy(object):
         parentNode = None
         childNode = None
 
-
         ############ testing for none + int error
         for node in nodes.values():
             node.setUnscheduled()
@@ -159,7 +158,7 @@ class WorkflowPolicy(object):
 
     def setEndNodeAST(self):
         endTime = -1
-        endNode = WorkflowNode(self._graph.getNodes().get(self._graph.getEndId()))
+        endNode = self._graph.getNodes().get(self._graph.getEndId())
         for parent in endNode.getParents():
             curEndTime = self._graph.getNodes().get(parent.getId()).getAFT()
             if endTime < curEndTime:
@@ -167,6 +166,9 @@ class WorkflowPolicy(object):
 
         endNode.setAST(int(round(endTime)))
         endNode.setAFT(int(round(endTime)))
+
+        return endNode.getAFT()
+
 
     def initializeStartEndNodes(self, startTime, deadline):
         nodes = self._graph.getNodes()
@@ -180,16 +182,14 @@ class WorkflowPolicy(object):
             tmp = []
             tmp.append(str(node.getId()))
             tmp.append(str(node.getSelectedResource()))
-            tmp.append(str(node.getEST))
+            tmp.append(str(node.getEST()))
             tmp.append(str(node.getRunTime()))
             tmp.append(str(node.getEFT()))
             tmp.append(str(node.getDeadline()))
             if node.getSelectedResource() == -1:
                 tmp.append("")
             else:
-                testing = self._resources.getResource(node.getSelectedResource())
                 tmp.append(self._resources.getResource(node.getSelectedResource()).getCost())
-
 
             rowsList.append(tmp)
 
@@ -209,7 +209,6 @@ class WorkflowPolicy(object):
                      fontweight="bold")
 
         plt.show()
-
 
     def computeFinalCost(self):
         totalCost = 0

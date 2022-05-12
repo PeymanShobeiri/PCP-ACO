@@ -24,7 +24,7 @@ class test:
             wb.getPolicy().computeESTandEFT(startTime)
             wb.getPolicy().computeLSTandLFT(deadline)
             MH = wb.graph.getNodes()[wb.graph.getEndId()].getAST()
-            print("Fastest: cost=" + str(CH) + " time=" + str(MH))
+            print("Fastest: cost= " + str(CH) + " time= " + str(MH))
         except Exception as e:
             print("Error in creating workflow broker!!!" + '  ' + str(e))
 
@@ -38,7 +38,7 @@ class test:
             MC = wb.graph.getNodes()[wb.graph.getEndId()].getAST()
             wb.getPolicy().computeESTandEFT(startTime)
             wb.getPolicy().computeLSTandLFT(deadline)
-            print("Cheapest: cost=" + str(CC) + " time=" + str(MC))
+            print("Cheapest: cost= " + str(CC) + " time= " + str(MC))
         except Exception as e:
             print("Error in creating workflow broker!!!!" + '  ' + str(e))
 
@@ -103,8 +103,7 @@ class test:
                     wf = Workflow(workflowPath)
                 """
                 print("=================================MY_ACO")
-                problemRepresentation = CloudAcoProblemRepresentation(wb.graph, wb.resources, Constants.BANDWIDTH,
-                                                                      deadline, 10)
+                problemRepresentation = CloudAcoProblemRepresentation(wb.graph, wb.resources, Constants.BANDWIDTH, deadline, 10)
                 environment = CloudAcoEnvironment(problemRepresentation=problemRepresentation)
                 cloudACO = CloudACO()
                 cloudACO.schedule(environment, deadline)

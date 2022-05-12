@@ -161,7 +161,7 @@ class PcpD2Policy(WorkflowPolicy):
         curFinish = curStart + round(float(curNode.getInstructionSize()) / curInst.getType().getMIPS())
         curNode.setEST(curStart)
         curNode.setEFT(curFinish)
-        curNode.setSelectedResource(curInst.getId())
+        curNode.setSelectedResource(curInst.getType().getId())  # je change ici
         curNode.setScheduled()
 
         if curInst.getFinishTime() == 0:
@@ -195,7 +195,7 @@ class PcpD2Policy(WorkflowPolicy):
             startTime = curStart
 
         r = self.result()
-        curFinish = int(curStart + round(float(curNode.getInstructionSize()) / curInst.getType().getMIPS()))
+        curFinish = int(curStart + ceil(float(curNode.getInstructionSize()) / curInst.getType().getMIPS()))
         r.finishTime = curFinish
         if (finishTime != 0 and curStart > curIntervalFinish) or curFinish > curNode.getDeadline():
             r.cost = sys.maxsize
@@ -240,6 +240,7 @@ class PcpD2Policy(WorkflowPolicy):
                         self._instances.addInstance(inst)
                         break
                     curRes -= 1
+
             self.setInstance(curNode, self._instances.getInstance(bestInst))
 
     def setEndNodeEST(self):
