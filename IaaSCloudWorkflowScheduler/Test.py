@@ -86,6 +86,7 @@ class test:
 
             #                       str(wb.getPolicy().solutionAsString())
             ######### testing for table
+
             wb.getPolicy().solutionAsString()
             print(message)
 
@@ -104,16 +105,17 @@ class test:
                 """
                 print("=================================MY_ACO")
                 problemRepresentation = CloudAcoProblemRepresentation(wb.graph, wb.resources, Constants.BANDWIDTH, deadline, 10)
-                environment = CloudAcoEnvironment(problemRepresentation=problemRepresentation)
+                environment = CloudAcoEnvironment(problemGraph=problemRepresentation)
                 cloudACO = CloudACO()
                 cloudACO.schedule(environment, deadline)
                 print("==================================MY_ACO")
                 return
             except Exception as e:
                 print("EEEEEException" + str(e))
+                print(e)
                 return
 
-            alpha += 1
+            alpha += 1.0
 
     def printWorkflow(self, g):
         pass

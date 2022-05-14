@@ -2,24 +2,35 @@ import sys
 
 sys.path.append('/Users/apple/Desktop/Create WS-ACO/MyCode')
 from IaaSCloudWorkflowScheduler.ACO.pyisula.Environment import Environment
-
+from IaaSCloudWorkflowScheduler.ACO.CloudAcoProblemRepresentation import CloudAcoProblemRepresentation
 
 class CloudAcoEnvironment(Environment):
 
     def __init__(self, problemGraph=None, problemRepresentation=None):
-        super().setPheromoneMatrix = problemRepresentation
-        super().__init__(100)
-        self.problemGraph = problemGraph
-        self.setPheromoneMatrix(self.createPheromoneMatrix())
-        self.populatePheromoneMatrix(0.01)
+        if problemRepresentation is not None:
+            self.problemGraph = None
+            super().__init__(problemRepresentation)
+        else:
+            self.problemGraph = problemGraph
+            tmp = []
+            for row in range(100):
+                tmp.append([float(0) for x in range(100)])
+            super().__init__(tmp)
+
+            self.setPheromoneMatrix(self.createPheromoneMatrix())
+            self.populatePheromoneMatrix(0.01)
 
     def createPheromoneMatrix(self):
-        if self.problemGraph == None:
-            return super()._init_matrix(100)
-        return super()._init_matrix(len(self.problemGraph.getProblemNodeList))
+        if self.problemGraph is None:
+            cur = []
+            for row in range(100):
+                cur.append([float(0) for x in range(100)])
+            return cur
 
-    def getProblemGraph(self):
-        return self.problemGraph
+        ret = []
+        for row in range(len(self.problemGraph.getProblemNodeList())):
+            ret.append([float(0) for x in range(len(self.problemGraph.getProblemNodeList()))])
+        return ret
 
     def getPheromoneValues(self):
         a = []
@@ -29,3 +40,6 @@ class CloudAcoEnvironment(Environment):
                 if a not in self.getPheromoneMatrix()[i][j]:
                     a.append(self.getPheromoneMatrix()[i][j])
         return a
+
+    def getProblemGraph(self) -> CloudAcoProblemRepresentation:
+        return self.problemGraph

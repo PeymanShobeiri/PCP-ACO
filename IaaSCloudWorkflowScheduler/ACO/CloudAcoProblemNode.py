@@ -1,4 +1,5 @@
 import sys
+
 sys.path.append('/Users/apple/Desktop/Create WS-ACO/MyCode')
 
 from ..WorkflowNode import WorkflowNode
@@ -7,8 +8,9 @@ from IaaSCloudWorkflowScheduler.ACO.CloudAcoResourceInstance import CloudAcoReso
 
 import warnings
 
+
 class CloudAcoProblemNode:
-    def __init__(self ,node= None ,resource= None , id= None):
+    def __init__(self, node=None, resource=None, id=None):
         if node != None:
             self.h = None
             self.setByRW = None
@@ -25,7 +27,7 @@ class CloudAcoProblemNode:
             self.__resource = CloudAcoResourceInstance(Resource(-1, 1, 1))
             self.__visited = False
             self.__id = -1
-    
+
     def getNode(self):
         return self.__node
 
@@ -49,14 +51,14 @@ class CloudAcoProblemNode:
 
     def getResource(self):
         return self.__resource
-    
+
     def setResource(self, resource):
         self.__resource = resource
-    
+
     def isVisited(self):
         return self.__visited
-    
-    def setVisited(self):
+
+    def _setVisited(self):
         self.getNode().setScheduled()
         self.__visited = True
 
@@ -66,33 +68,37 @@ class CloudAcoProblemNode:
         problemNodes = environment.getProblemGraph().getProblemNodeList()
         for node in problemNodes:
             if node.getNode().getId() == self.getNode().getId():
-                node.setVisited()
-        
+                node._setVisited()
+
     def getId(self):
         return self.__id
 
     def setId(self, id):
         self.__id = id
-    
+
     warnings.filterwarnings("ignore")
+    '''
+    Getting the neighbor of every node.
+    In this method we check the possible movement for ant.'''
+
     def getNeighbourhood(self, environment):
         finalNeighbours = []
-        
-        if environment.getProblemGraph().getNeighbours(self.getNode() == None):
+
+        if environment.getProblemGraph().getNeighbours(self.getNode()) == None:
             finalNeighbours.append(environment.getProblemGraph().getStart())
             return finalNeighbours
         else:
             return environment.getProblemGraph().getNeighbours(self.getNode())
-        
+
     def __str__(self):
         return "id:" + str(self.getId()) \
-                        + "node:" + str(self.getNode().getId())\
-                        + " resource: " + str(self.getResource().getId())\
-                        + " instance: " + str(self.getResource().getInstanceId())\
-                        + " EST : " + str(self.getNode().getEST())\
-                        + " AST : " + str(self.getNode().getAST())\
-                        + " AFT : " + str(self.getNode().getAFT())\
-                        + " LFT : " + str(self.getNode().getLFT())\
-                        + " DL : " + str(self.getNode().getDeadline())\
-                        + " H : " + str(self.h)\
-                        + " setByRW : " + str(self.setByRW)
+               + "node:" + str(self.getNode().getId()) \
+               + " resource: " + str(self.getResource().getId()) \
+               + " instance: " + str(self.getResource().getInstanceId()) \
+               + " EST : " + str(self.getNode().getEST()) \
+               + " AST : " + str(self.getNode().getAST()) \
+               + " AFT : " + str(self.getNode().getAFT()) \
+               + " LFT : " + str(self.getNode().getLFT()) \
+               + " DL : " + str(self.getNode().getDeadline()) \
+               + " H : " + str(self.h) \
+               + " setByRW : " + str(self.setByRW)

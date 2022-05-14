@@ -9,7 +9,7 @@ class CloudAcoResourceInstanceSet:
     count = None
 
     def initialize(self, resources):
-        instances = {}
+        # instances = {}
         id = 0
         for j in range(resources.getSize()):
             resource = resources.getResource(j)
@@ -21,7 +21,9 @@ class CloudAcoResourceInstanceSet:
 
     def __init__(self, resources, count):
         self.count = count
+        self.instances = {}
         self.initialize(resources)
+
     
     def getInstances(self):
         return self.instances

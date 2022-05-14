@@ -187,11 +187,11 @@ class CloudAcoProblemRepresentation:
             curNode.setUnscheduled()
             for instances in self.__instanceSet.getInstances().values():
                 if curNode.getId() == "start":
-                    start = CloudAcoProblemNode(curNode, instances[0], id.value)
-                    problemNodeList.append(start)
+                    self.__start = CloudAcoProblemNode(curNode, instances[0], id.value)
+                    problemNodeList.append(self.__start)
                 elif curNode.getId() == "end":
-                    end = CloudAcoProblemNode(curNode, instances[0], id.value)
-                    problemNodeList.append(end)
+                    self.__end = CloudAcoProblemNode(curNode, instances[0], id.value)
+                    problemNodeList.append(self.__end)
                 else:
                     for instance in instances:
                         node = CloudAcoProblemNode(curNode, instance, id.value)

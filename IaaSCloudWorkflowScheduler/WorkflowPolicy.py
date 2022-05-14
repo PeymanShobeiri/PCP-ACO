@@ -203,10 +203,12 @@ class WorkflowPolicy(object):
             rowColours=["skyblue"] * len(rowsList),
             colColours=["skyblue"] * 7,
             cellLoc='center',
-            loc='upper left')
+            loc='center')
 
-        ax.set_title('WorkflowPolicy.solution',
-                     fontweight="bold")
+        #ax.set_title('WorkflowPolicy.solution',
+                     #fontweight="bold")
+
+        # plt.rcParams.update({'font.size': 1})
 
         plt.show()
 
