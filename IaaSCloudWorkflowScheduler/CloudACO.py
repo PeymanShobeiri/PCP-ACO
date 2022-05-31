@@ -195,8 +195,8 @@ class CloudACO:
         if self.__bestAnt != None:
             self.releasePheromone(self.__bestAnt)
 
-        for j in len(self.__pheromone):
-            for i in len(self.__pheromone[j]):
+        for j in range(len(self.__pheromone)):
+            for i in range(len(self.__pheromone[j])):
                 if self.__pheromone[j][i] > 1:
                     self.__pheromone[j][i] = 1
                 elif self.__pheromone[j][i] < 0.2:
@@ -239,11 +239,11 @@ class CloudACO:
 
                 if self.__bestAnt == None and currentAnt.makeSpan <= deadline:
                     self.__bestAnt = currentAnt
-                    self.__bestAnt.saveSolution()
+                    # self.__bestAnt.saveSolution()
                     print("best ant: " + str(self.__bestAnt.solutionCost))
                 elif currentAnt.solutionCost <= self.__bestAnt.solutionCost and currentAnt.makeSpan <= deadline:
                     self.__bestAnt = currentAnt
-                    self.__bestAnt.saveSolution()
+                    # self.__bestAnt.saveSolution()
                     print("best ant: " + str(self.__bestAnt.solutionCost))
                 environment.getProblemGraph().getInstanceSet().resetPerAnt()
 
