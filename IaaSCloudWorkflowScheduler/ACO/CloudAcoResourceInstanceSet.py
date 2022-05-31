@@ -1,8 +1,10 @@
 import sys
+
 sys.path.append('/Users/apple/Desktop/Create WS-ACO/MyCode')
 from IaaSCloudWorkflowScheduler.ACO.CloudAcoResourceInstance import CloudAcoResourceInstance
 
 import warnings
+
 
 class CloudAcoResourceInstanceSet:
     instances = {}
@@ -24,23 +26,23 @@ class CloudAcoResourceInstanceSet:
         self.instances = {}
         self.initialize(resources)
 
-    
     def getInstances(self):
         return self.instances
-    
+
     def getCount(self):
         return self.count
-    
+
     warnings.filterwarnings("ignore")
-    def getFinishTime(self):        # Atomic  ?? what the ....
+
+    def getFinishTime(self):  # Atomic  ?? what the ....
         max = -1
         for instances in self.instances.values():
             for instance in instances:
                 if instance.getInstanceFinishTime() > max:
                     max = int(instance.getInstanceFinishTime())
-        
+
         return max
-    
+
     def resetPerAnt(self):
         for instances in self.instances.values():
             for instance in instances:
