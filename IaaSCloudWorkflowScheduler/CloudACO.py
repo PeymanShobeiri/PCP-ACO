@@ -2,6 +2,7 @@ import random
 import sys
 from threading import Thread
 import matplotlib.pyplot as plt
+import numpy as np
 
 from .ACO.CloudAcoResourceInstance import CloudAcoResourceInstance
 from .ACO.CloudAcoProblemNode import CloudAcoProblemNode
@@ -14,9 +15,9 @@ class CloudACO:
         self.__P_RATIO = 0.4
         self.__EVAP_RATIO = 0.1
         self.__Q0 = 0.9
-        self.__iterCount = 100
-        self.__antCount = 150
-        self.__pheromone = []
+        self.__iterCount = 5
+        self.__antCount = 100
+        self.__pheromone = None
         self.__heuristic = []
         self.__probability = []
         self.__colony = []
@@ -25,21 +26,15 @@ class CloudACO:
         self.__heuristicCache = dict()
 
     def initPheromone(self, size):
-        heuristic = [None] * size
-        probability = [None] * size
-        for row in range(size):
-            self.__pheromone.append([None for x in range(size)])
-
-        for i in range(len(self.__pheromone)):
-            for j in range(len(self.__pheromone[i])):
-                self.__pheromone[i][j] = 0.000011
+        self.__heuristic = [None] * size
+        self.__probability = [None] * size
+        self.__pheromone = np.full((size, size), 0.000011)
 
     def initColony(self, antCount, graphSize):
         start = self.__environment.getProblemGraph().getStart()
         self.__colony = [None] * antCount
         for k in range(antCount):
             ant = self.Ant(k, graphSize)
-            # ant.start()  # start thread
             ant.solution[0] = start
             self.__colony[k] = ant
 
@@ -56,8 +51,6 @@ class CloudACO:
     def getHeuristicValue(self, destination, positionInSolution):
         curCost = destination.getResource().getCost(destination.getNode())
         currentDuration = destination.getResource().getTaskDuration(destination.getNode())
-        # test1 = destination.getResource().getInstanceReleaseTime()
-        # test2 = destination.getNode().getEST()
         currentST = max(destination.getResource().getInstanceReleaseTime(), destination.getNode().getEST())
         currentFT = currentST + currentDuration
 
@@ -131,7 +124,6 @@ class CloudACO:
         bestOption = -1
         for i in range(len(candidateNodes)):
             self.__heuristic.insert(i, self.getHeuristicValue(candidateNodes[i], positionInSolution))
-            # self.__heuristic[i] = self.getHeuristicValue(candidateNodes[i], positionInSolution)
             candidateNodes[i].h = self.__heuristic[i]
             if self.__heuristic[i] >= bestOption:
                 bestOption = self.__heuristic[i]
@@ -176,8 +168,6 @@ class CloudACO:
         for inst in tmp:
             for k in inst:
                 result += k.getTotalCost()
-        # x = map(CloudAcoResourceInstance.getTotalCost, tmp)
-        # result = sum(list(x))
         return result
 
     def releasePheromone(self, bestAnt):
@@ -188,11 +178,10 @@ class CloudACO:
             i += 1
 
     def updatePheromone(self):
-        for j in range(len(self.__pheromone)):
-            for i in range(len(self.__pheromone[j])):
-                self.__pheromone[j][i] = self.__pheromone[i][j] * self.__EVAP_RATIO
 
-        if self.__bestAnt != None:
+        self.__pheromone = self.__pheromone * self.__EVAP_RATIO
+
+        if self.__bestAnt is not None:
             self.releasePheromone(self.__bestAnt)
 
         for j in range(len(self.__pheromone)):
@@ -203,7 +192,6 @@ class CloudACO:
                     self.__pheromone[j][i] = 0.2
 
     def schedule(self, environment, deadline):
-
         workflow = environment.getProblemGraph()
         self.__environment = environment
         self.initPheromone(len(environment.getProblemGraph().getProblemNodeList()) * 2)
@@ -237,7 +225,7 @@ class CloudACO:
 
                 currentAnt.solutionCost = self.getSolutionCost()
 
-                if self.__bestAnt == None and currentAnt.makeSpan <= deadline:
+                if self.__bestAnt is None and currentAnt.makeSpan <= deadline:
                     self.__bestAnt = currentAnt
                     # self.__bestAnt.saveSolution()
                     print("best ant: " + str(self.__bestAnt.solutionCost))
@@ -249,16 +237,16 @@ class CloudACO:
 
                 antNum += 1
 
-
             self.updatePheromone()
+            self.__bestAnt.saveSolution()
             itr += 1
 
-        print("best ant best: " + self.__bestAnt)
-        # self.__bestAnt.saveSolution()
+        print("best ant best: " + str(self.__bestAnt.solutionCost))
+        self.__bestAnt.saveSolution()
 
-    class Ant(Thread):
+    class Ant:
         def __init__(self, id=None, size=None):
-            Thread.__init__(self)
+            # Thread.__init__(self)
 
             self.isCompleted = False
             self._id = id
