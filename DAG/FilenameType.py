@@ -6,6 +6,7 @@ from .LinkageType import LinkageType
 
 class FilenameType(PlainFilenameType):
     def __init__(self):
+        super().__init__()
         self.__temporaryHint = ''
         self.__link = None
         self.__optional = None

@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class LinkageType(Enum):
     NONE = "none"
     INPUT = "input"
@@ -11,7 +12,7 @@ class LinkageType(Enum):
 
     def xmlValue(self):
         return self.__value
-    
+
     def convert(val):
         for inst in LinkageType.__members__.values():
             if inst.xmlValue() == val:
