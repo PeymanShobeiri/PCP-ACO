@@ -24,9 +24,9 @@ class WorkflowGraph:
                 for childJob in dag.getJobList():
                     if childJob.getId() == childId:
                         for outFile in parentJob.getUseList():
-                            if outFile.getLink() == LinkageType.OUTPUT:
+                            if outFile.getLink() == "output":
                                 for inFile in childJob.getUseList():
-                                    if inFile.getLink() == LinkageType.INPUT and inFile.getFile() == outFile.getFile():
+                                    if inFile.getLink() == "input" and inFile.getFile() == outFile.getFile():
                                         curSize = int(inFile.getSize())
                                         if curSize > 0:
                                             size += curSize
@@ -87,14 +87,14 @@ class WorkflowGraph:
         runTime = None
 
         self.nodes.clear()
-        if dag == None:
+        if dag is None:
             return False
         for job in dag.getJobList():
             inputFilesSize = outputFilesSize = 0
             for file in job.getUseList():
-                if file.getLink() == LinkageType.INPUT and int(file.getSize()) > 0:
+                if file.getLink() == "input" and int(file.getSize()) > 0:
                     inputFilesSize += int(file.getSize())
-                elif file.getLink() == LinkageType.OUTPUT and int(file.getSize()) > 0:
+                elif file.getLink() == "output" and int(file.getSize()) > 0:
                     outputFilesSize += int(file.getSize())
 
             runTime = round(float(job.getRuntime()))

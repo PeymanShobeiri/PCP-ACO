@@ -82,6 +82,8 @@ class WorkflowPolicy(object):
             candidateNodes.put(child.getId())
 
         while not candidateNodes.empty():  # maxtime and thistime needed to be decleard here ?
+            thisTime = 0.0
+            maxTime = 0.0
             curNode = nodes.get(candidateNodes.get())
             maxTime = -1
             for parent in curNode.getParents():
@@ -169,7 +171,6 @@ class WorkflowPolicy(object):
 
         return endNode.getAFT()
 
-
     def initializeStartEndNodes(self, startTime, deadline):
         nodes = self._graph.getNodes()
         nodes.get(self._graph.getStartId()).setScheduled()
@@ -205,8 +206,8 @@ class WorkflowPolicy(object):
             cellLoc='center',
             loc='center')
 
-        #ax.set_title('WorkflowPolicy.solution',
-                     #fontweight="bold")
+        # ax.set_title('WorkflowPolicy.solution',
+        # fontweight="bold")
 
         # plt.rcParams.update({'font.size': 1})
 
