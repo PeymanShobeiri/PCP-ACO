@@ -83,7 +83,7 @@ class CloudAcoProblemRepresentation:
         def remove(self):  # check for time complexity !!!
             try:
                 max = 0
-                for i in range(len(self.queue) - 1):
+                for i in range(len(self.queue)):
                     if self.compare(self.queue[i], self.queue[max]) > 0:
                         max = i
                 item = self.queue[max]
@@ -148,12 +148,12 @@ class CloudAcoProblemRepresentation:
             maxTime = -1
             for child in curNode.getChildren():
                 childNode = nodes.get(child.getId())
-                thisTime = childNode.getUpRank() + round(float(child.getDataSize() / self.__bandwidth))
+                thisTime = childNode.getUpRank() + round(float(child.getDataSize()) / self.__bandwidth)
                 if thisTime > maxTime:
                     maxTime = thisTime
 
             maxMIPS = self.__resourceSet.getMeanMIPS()
-            maxTime += round(float(curNode.getInstructionSize() / maxMIPS))
+            maxTime += round(float(curNode.getInstructionSize()) / maxMIPS)
             curNode.setUpRank(maxTime)
             curNode.setScheduled()
 

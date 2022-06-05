@@ -20,9 +20,9 @@ class test:
         MH = 0
         try:
             wb = WorkflowBroker(WfFile, ScheduleType.Fastest)
-            CH = wb.schedule(startTime, deadline)
             wb.getPolicy().computeESTandEFT(startTime)
             wb.getPolicy().computeLSTandLFT(deadline)
+            CH = wb.schedule(startTime, deadline)
             MH = wb.graph.getNodes()[wb.graph.getEndId()].getAST()
             print("Fastest: cost= " + str(CH) + " time= " + str(MH))
         except Exception as e:
@@ -103,6 +103,7 @@ class test:
                 for scheduler in methods:
                     wf = Workflow(workflowPath)
                 """
+
                 print("=================================MY_ACO")
                 problemRepresentation = CloudAcoProblemRepresentation(wb.graph, wb.resources, Constants.BANDWIDTH, deadline, 5)
                 environment = CloudAcoEnvironment(problemGraph=problemRepresentation)

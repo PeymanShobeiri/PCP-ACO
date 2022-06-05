@@ -47,7 +47,7 @@ class CloudAcoResourceInstance:
 
     def getTaskDuration(self, node):
         runtime = round(float(node.getInstructionSize()) / self.getMIPS())
-        runtime + self.getBandwidthDuration(node)
+        runtime += self.getBandwidthDuration(node)
         return runtime
 
     def getInstanceRemainingTime(self, time):
@@ -67,7 +67,7 @@ class CloudAcoResourceInstance:
             0)
         addedTimeToProvision = (countOfHoursToProvision * self.__PERIOD_DURATION)
 
-        if self.__currentTask == None:
+        if self.__currentTask is None:
             self.__instanceStartTime = node.getEST()
             self.__instanceFinishTime = addedTimeToProvision
             self.__currentStartTime = node.getEST()
