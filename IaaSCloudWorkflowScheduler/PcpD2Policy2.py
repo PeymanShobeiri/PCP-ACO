@@ -139,7 +139,6 @@ class PcpD2Policy2(WorkflowPolicy):
 
         self.assignParents(curNode)
 
-
     def distributeDeadline(self):
         self.assignParents(self._graph.getNodes().get(self._graph.getEndId()))
         # je suis ici
