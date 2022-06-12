@@ -15,8 +15,8 @@ class CloudACO:
         self.__P_RATIO = 0.4
         self.__EVAP_RATIO = 0.1
         self.__Q0 = 0.9
-        self.__iterCount = 5
-        self.__antCount = 5
+        self.__iterCount = 100
+        self.__antCount = 100
         self.__pheromone = None
         self.__heuristic = []
         self.__probability = []
@@ -39,7 +39,7 @@ class CloudACO:
             self.__colony[k] = ant
 
     """
-    index 0 -> heuristic value
+       index 0 -> heuristic value
      * index 1 -> option runtime
      * index 2 -> option cost
      *
@@ -153,7 +153,7 @@ class CloudACO:
         while i < len(candidates) and total < value:
             node = candidates[i]
             probability = probabilities[i]
-            if probability == None:
+            if probability is None:
                 raise RuntimeError("The probability for component " + node + " is not a number.")
 
             total += probability

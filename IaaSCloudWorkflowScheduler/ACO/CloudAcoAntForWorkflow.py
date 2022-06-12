@@ -13,13 +13,14 @@ from .pyisula.algorithms.StartPheromoneMatrix import StartPheromoneMatrix
 from .pyisula.AntColony import AntColony
 from .pyisula.exception.ConfigurationException import ConfigurationException
 import sys
-#CloudAcoWorkflow().antId + 1
 
+
+# CloudAcoWorkflow().antId + 1
 
 
 class WorkflowUpdatePheromoneMatrix(UpdatePheromoneMatrixForMaxMin):
 
-    def getNewPheromoneValue(self, ant , pre , next , configurationProvider):
+    def getNewPheromoneValue(self, ant, pre, next, configurationProvider):
         cost = CloudAcoAntForWorkflow(ant).getLastSolutionCost()
         makeSpan = CloudAcoAntForWorkflow(ant).getLastMakeSpan()
         deadline = self.getEnvironment().getProblemGraph().getDeadline()
@@ -32,16 +33,15 @@ class WorkflowUpdatePheromoneMatrix(UpdatePheromoneMatrixForMaxMin):
             k = (deadline / makeSpan) + (minCost / maxCost)
         else:
             k = 1 + (minCost / cost)
-        
+
         return 0.9 * ant.getPheromoneTrailValue(next, pre, self.getEnvironment()) + 0.1 * k
 
-    
     def getMaximumPheromoneValue(self, configurationProvider):
         return 1
 
     def getMinimumPheromoneValue(self, configurationProvider):
         return 0.0001
-    
+
     def validatePheromoneValue(self, v):
         if v == sys.maxsize or v == None:
             raise ConfigurationException("The pheromone value calculated is not a valid number: " + v)
@@ -61,9 +61,9 @@ class WorkflowUpdatePheromoneMatrix(UpdatePheromoneMatrixForMaxMin):
                     pheromoneMatrix[i][j] = newValue
                 else:
                     pheromoneMatrix[i][j] = self.getMinimumPheromoneValue(configurationProvider)
-                
+
                 self.validatePheromoneValue(pheromoneMatrix[i][j])
-        
+
         bestAnt = self.getAntColony().getBestPerformingAnt(self.getEnvironment())
         bestSolution = bestAnt.getSolution()
 
@@ -72,17 +72,16 @@ class WorkflowUpdatePheromoneMatrix(UpdatePheromoneMatrixForMaxMin):
         while componentIndex < len(bestSolution):
             solutionComponent = bestSolution[componentIndex]
             lastPos = bestSolution[componentIndex - 1]
-            newValue = self.getNewPheromoneValue(bestAnt, lastPos.getId() , solutionComponent, configurationProvider)
+            newValue = self.getNewPheromoneValue(bestAnt, lastPos.getId(), solutionComponent, configurationProvider)
             if newValue <= self.getMaximumPheromoneValue(configurationProvider):
-                bestAnt.setPheromoneTrailValue(lastPos, solutionComponent.getId() , self.getEnvironment(), newValue)
+                bestAnt.setPheromoneTrailValue(lastPos, solutionComponent.getId(), self.getEnvironment(), newValue)
             else:
-                bestAnt.setPheromoneTrailValue(lastPos, solutionComponent.getId(), self.getEnvironment(),self.getMaximumPheromoneValue(configurationProvider))
-            
-            self.validatePheromoneValue(bestAnt.getPheromoneTrailValue(lastPos, solutionComponent.getId(), self.getEnvironment()))
-            componentIndex += 1 
+                bestAnt.setPheromoneTrailValue(lastPos, solutionComponent.getId(), self.getEnvironment(),
+                                               self.getMaximumPheromoneValue(configurationProvider))
 
-
-
+            self.validatePheromoneValue(
+                bestAnt.getPheromoneTrailValue(lastPos, solutionComponent.getId(), self.getEnvironment()))
+            componentIndex += 1
 
 
 class CloudAcoAntColony(AntColony):
@@ -95,7 +94,7 @@ class CloudAcoAntColony(AntColony):
     def createAnt(self, cloudAcoEnvironment):
         tmp = CloudAcoAntForWorkflow(cloudAcoEnvironment)
         return tmp
-    
+
     def getBestPerformingAnt(self, environment):
         bestAnt = self.getHive()[0]
         var3 = self.getHive()
@@ -104,12 +103,13 @@ class CloudAcoAntColony(AntColony):
             if ant.getLastSolutionCost() < bestCost and ant.isValidAnswer():
                 bestAnt = ant
                 bestCost = ant.getLastSolutionCost()
-        
+
         return bestAnt
-    
+
     def buildSolutions(self, environment, configurationProvider):
         if len(self.getHive()) == 0:
-            raise ConfigurationException("Your colony is empty: You have no ants to solve the problem. Have you called the buildColony() method?. Number of ants from configuration provider: " + configurationProvider.getNumberOfAnts())
+            raise ConfigurationException(
+                "Your colony is empty: You have no ants to solve the problem. Have you called the buildColony() method?. Number of ants from configuration provider: " + configurationProvider.getNumberOfAnts())
         else:
             for ant in self.getHive():
                 failed = False
@@ -120,7 +120,7 @@ class CloudAcoAntColony(AntColony):
                     except:
                         failed = True
                         break
-                
+
                 if not failed:
                     ant.setValidAnswer(True)
                     antCost = ant.getSolutionCost(environment)
@@ -130,23 +130,21 @@ class CloudAcoAntColony(AntColony):
                         self.__solution = ant.getSolutionAsString()
                         if ant.isValidAnswer():
                             print("valid Answer found! cost: " + self.__solutionCost)
-                
+
                 ant.doAfterSolutionIsReady(environment, configurationProvider)
-            
+
             CloudAcoAntForWorkflow().resetCache()
-    
+
     def getSolution(self):
         return self.__solution
-    
+
     def getSolutionCost(self):
         return self.__solutionCost
-        
-
-
 
 
 class CloudAcoWorkflow:
-    antId = 0 
+    antId = 0
+
     def getAntColony(self, configurationProvider):
         tmp = CloudAcoAntColony(configurationProvider.getNumberOfAnts())
         return tmp
@@ -165,37 +163,35 @@ class CloudAcoWorkflow:
         workflowUpdatePheromoneMatrix.setEnvironment(self.__environment)
         self.__solver.addCloudACODaemonActions(startPheromoneMatrix, workflowUpdatePheromoneMatrix)
         self.__solver.getAntColony().addAntPolicies(CloudAcoPseudoRandomNodeSelection())
-        
+
         self.__mCloudAcoWorkflow = None
-        
+
     def OptimiseWorkFlow(self, graph, resourceSet, bandwidth, deadline):
-        self.__mCloudAcoWorkflow = CloudAcoWorkflow(graph, resourceSet , bandwidth, deadline)
+        self.__mCloudAcoWorkflow = CloudAcoWorkflow(graph, resourceSet, bandwidth, deadline)
         return self.__mCloudAcoWorkflow
-    
+
     def setLacoSort(self, sortedTaskIds):
         self.__problemRepresentation.lacoSort(sortedTaskIds)
         return self.__mCloudAcoWorkflow
-    
+
     def solve(self):
         self.__mCloudAcoWorkflow.solve().solveProblem()
 
     def printSolution(self):
-        print("Cost: " + self.__mCloudAcoWorkflow.colony.getSolutionCost() + "\n" + self.__mCloudAcoWorkflow.colony.getSolution())
-    
+        print(
+            "Cost: " + self.__mCloudAcoWorkflow.colony.getSolutionCost() + "\n" + self.__mCloudAcoWorkflow.colony.getSolution())
+
     def getAntColony(self, configurationProvider):
         tmp = CloudAcoAntColony(configurationProvider.getNumberOfAnts())
         return tmp
-    
-
-
 
 
 class CloudAcoAntForWorkflow(Ant):
 
-    def __init__(self , environment):
+    def __init__(self, environment):
         self.__currentNode = CloudAcoProblemNode()
         self.__environment = environment
-        self.__id =CloudAcoWorkflow.antId + 1
+        self.__id = CloudAcoWorkflow.antId + 1
         self.__lastSolutionCost = 0
         self.__lastMakeSpan = 0
         self.__lastRawSolutionCost = 0
@@ -210,13 +206,13 @@ class CloudAcoAntForWorkflow(Ant):
 
     def getLastMakeSpan(self):
         return self.__lastMakeSpan
-    
+
     def setLastMakeSpan(self, lastMakeSpan):
         self.__lastMakeSpan = lastMakeSpan
-    
+
     def isSolutionReady(self, cloudAcoEnvironment):
         return self.getCurrentIndex() == self.__environment.getProblemGraph().getGraphSize()
-    
+
     def getSolutionCost(self, cloudAcoEnvironment):
         total = 0.0
         deadline = self.__environment.getProblemGraph().getDeadline()
@@ -227,30 +223,33 @@ class CloudAcoAntForWorkflow(Ant):
 
         self.__lastSolutionCost = total
         self.__lastRawSolutionCost = total
-        self.__lastMakeSpan = self.__environment.getProblemGraph().getGraph().getNodes().get(self.__environment.getProblemGraph().getGraph().getEndId()).getAFT()
-        if self.__environment.getProblemGraph().getGraph().getNodes().get(self.__environment.getProblemGraph().getGraph().getEndId()).getAFT() > deadline:
+        self.__lastMakeSpan = self.__environment.getProblemGraph().getGraph().getNodes().get(
+            self.__environment.getProblemGraph().getGraph().getEndId()).getAFT()
+        if self.__environment.getProblemGraph().getGraph().getNodes().get(
+                self.__environment.getProblemGraph().getGraph().getEndId()).getAFT() > deadline:
             self.__validAnswer = False
-            self.__lastSolutionCost = total * (self.__environmentgetProblemGraph().getGraph().getNodes().get(self.__environment.getProblemGraph().getGraph().getEndId()).getAFT() - deadline)
+            self.__lastSolutionCost = total * (self.__environmentgetProblemGraph().getGraph().getNodes().get(
+                self.__environment.getProblemGraph().getGraph().getEndId()).getAFT() - deadline)
             return self.__lastSolutionCost
-        
+
         return total
-    
+
     def getLastSolutionCost(self):
         return self.__lastSolutionCost
 
     def getLastRawSolutionCost(self):
         return self.__lastRawSolutionCost
-    
+
     def isValidAnswer(self):
         for n in self.getSolution():
             if n == None:
                 return False
-        
+
         return self.__validAnswer and self.isSolutionReady(self.__environment)
-    
+
     def setValidAnswer(self, validAnswer):
         self.__validAnswer = validAnswer
-    
+
     def getSolutionAsString(self):
         tmp = self.__environment.getProblemGraph().getInstanceSet().getInstances()
         helper = [i.getTotalCost() for i in tmp.values]
@@ -265,7 +264,7 @@ class CloudAcoAntForWorkflow(Ant):
         for node in self.getSolution():
             if node == None:
                 continue
-                
+
             runtime = node.getResource().getTaskDuration(node.getNode())
             tmp2 = []
             tmp2.append(str(node.getNode().getId()))
@@ -286,32 +285,32 @@ class CloudAcoAntForWorkflow(Ant):
             tmp2.append(string2[0:x])
 
             rowsList.append(tmp2)
-        
+
         # create a board  !!!!!!!!!!!!!!!!
         rowsList.append(total)
         rowsList.append(deadline)
         return rowsList
-    
+
     def resetCache(self):
-        print("cache size:" + len(self.__heuristicCache) + " uses time:" + self.__cacheUses + " ario:" ,end=' ' )
+        print("cache size:" + len(self.__heuristicCache) + " uses time:" + self.__cacheUses + " ario:", end=' ')
         if self.__cacheUses + len(self.__heuristicCache) == 0:
             print(0)
         else:
             print(self.__cacheUses / len(self.__heuristicCache))
-        
+
         self.__cacheUses = 0
         self.__heuristicCache.clear()
-    
+
     def getNeighbourhood(self, cloudAcoEnvironment):
         return self.__currentNode.getNeighbourhood(cloudAcoEnvironment)
-    
+
     def getPheromoneTrailValue(self, next, positionInSolution, cloudAcoEnvironment):
         if self.__currentNode.getId() == CloudAcoProblemRepresentation().START_NODE_ID:
             return CloudAcoProblemRepresentation().START_NODE_PHEROMONE
-        
+
         pheromoneMatrix = self.__environment.getPheromoneMatrix()
         return pheromoneMatrix[self.__currentNode.getId()][next.getId()]
-    
+
     def visitNode(self, visitedNode):
         if self.getCurrentIndex() > len(self.getSolution()):
             self.getSolution()[self.getCurrentIndex()] = visitedNode
@@ -329,64 +328,63 @@ class CloudAcoAntForWorkflow(Ant):
         self.getVisited().clear()
         self.__environment.getProblemGraph().getInstanceSet().resetPerAnt()
 
-
     def clear(self):
         self.setCurrentIndex(0)
         if self.getSolution() != None:
             for i in range(len(self.getSolution())):
                 self.getSolution()[i] = None
-            
+
             self.setUnvisited()
-        
+
     def doAfterSolutionIsReady(self, environment, configurationProvider):
         self.doAfterSolutionIsReady(environment, configurationProvider)
         self.setUnvisited()
-    
+
     class HeuristicCondition:
-        def __init__(self, curDuration , curCost , curStartTime, instanceId) :
+        def __init__(self, curDuration, curCost, curStartTime, instanceId):
             self.__curDuration = curDuration
             self.__curCost = curCost
             self.__curStartTime = curStartTime
             self.__instanceId = instanceId
-        
+
         def getCurDuration(self):
             return self.__curDuration
-        
+
         def setCurDuration(self, curDuration):
             self.__curDuration = curDuration
-        
+
         def getCurCost(self):
             return self.__curCost
-        
+
         def setCurCost(self, curCost):
             self.__curCost = curCost
-        
+
         def getCurStartTime(self):
             return self.__curStartTime
-        
+
         def setCurStartTime(self, curStartTime):
             self.__curStartTime = curStartTime
-        
+
         def getInstanceId(self):
             return self.__instanceId
-        
+
         def setInstanceId(self, instanceId):
             self.__instanceId = instanceId
-        
+
         def __eq__(self, other):
             if self == other:
                 return True
             if type(other) != type(self):
                 return False
-            if (self.__curDuration == other.__curDuration) and (self.__curCost == other.__curCost) and (self.__curStartTime == other.__curStartTime) and (self.__instanceId == other.__instanceId):
+            if (self.__curDuration == other.__curDuration) and (self.__curCost == other.__curCost) and (
+                    self.__curStartTime == other.__curStartTime) and (self.__instanceId == other.__instanceId):
                 return True
             else:
                 return False
 
-        def hashCode(self):     
+        def hashCode(self):
             #  return Objects.hash(curDuration, curCost, curStartTime, instanceId);
             return hash(self)
-
 
     def getHeuristicValue(self, destination, positionInSolution, cloudAcoEnvironment):
         curCost = destination.getResource().getCost(destination.getNode())
@@ -398,22 +396,24 @@ class CloudAcoAntForWorkflow(Ant):
         if hc in self.__heuristicCache.keys():
             self.__cacheUses += 1
             return self.__heuristicCache.get(hc)
-        
+
         h1 = 0.0
         h2 = 0.0
-        
-        if not (destination.getNode().getId()).lower() == "end" and (not (destination.getNode().getId()).lower() == "start"):
+
+        if not (destination.getNode().getId()).lower() == "end" and (
+                not (destination.getNode().getId()).lower() == "start"):
             if currentFT > destination.getNode().getLFT():
                 return 0.0
-        
+
         bad = False
 
         if currentFT < destination.getNode().getDeadline():
             h1 = 1
         else:
-            h1 = max(0, (((destination.getNode().getLFT() - currentFT) + 1) / ((destination.getNode().getLFT() - destination.getNode().getDeadline() + 1) * 1.0)))
+            h1 = max(0, (((destination.getNode().getLFT() - currentFT) + 1) / (
+                    (destination.getNode().getLFT() - destination.getNode().getDeadline() + 1) * 1.0)))
             bad = True
-        
+
         maxCost = -1
         minCost = sys.maxsize
         fastest = sys.maxsize
@@ -429,7 +429,7 @@ class CloudAcoAntForWorkflow(Ant):
                     maxCost = temp
                 elif temp < minCost:
                     minCost = temp
-        
+
         h3 = (slowest - currentDuration + 1) / (slowest - fastest + 1)
 
         h2 = ((maxCost - curCost + 1) / (maxCost - minCost + 1))
@@ -446,13 +446,10 @@ class CloudAcoAntForWorkflow(Ant):
             p1 = 2
             p2 = 11
             p3 = 2
-        
+
         result = ((h1 * p1) + (h2 * p2) + (h3 * p3)) / ratio
 
-        if bad :
+        if bad:
             result = pow(result, 2)
         self.__heuristicCache[hc] = result
         return result
-
-
-

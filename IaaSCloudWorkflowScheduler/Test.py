@@ -105,7 +105,7 @@ class test:
                     wf = Workflow(workflowPath)
                 """
                 print("=================================MY_ACO")
-                problemRepresentation = CloudAcoProblemRepresentation(wb.graph, wb.resources, Constants.BANDWIDTH, deadline, 10)
+                problemRepresentation = CloudAcoProblemRepresentation(wb.graph, wb.resources, Constants.BANDWIDTH, deadline, 6)
                 environment = CloudAcoEnvironment(problemGraph=problemRepresentation)
                 cloudACO = CloudACO()
                 cloudACO.schedule(environment, deadline)

@@ -76,6 +76,8 @@ class CloudAcoProblemRepresentation:
             childNumber2 = self.computeTotalChild(node2)
             self.setAllChildUnscheduled(node2)
             if childNumber1 > childNumber2:
+                return 0
+            elif childNumber1 < childNumber2:
                 return 1
             else:
                 return 0
@@ -83,8 +85,8 @@ class CloudAcoProblemRepresentation:
         def remove(self):  # check for time complexity !!!
             try:
                 max = 0
-                for i in range(len(self.queue) - 1):
-                    if self.compare(self.queue[i], self.queue[max]) > 0:
+                for i in range(len(self.queue)):
+                    if self.compare(self.queue[i], self.queue[max]):
                         max = i
                 item = self.queue[max]
                 del self.queue[max]
@@ -167,17 +169,17 @@ class CloudAcoProblemRepresentation:
                     candidateNodes.put(parent.getId())
 
         for node in nodes.values():
-            node.setUnscheduled
+            node.setUnscheduled()
 
     warnings.filterwarnings("ignore")
 
     def createProblemNodeList(self, graph, resourceSet):
         id = AtomicInteger()
         problemNodeList = []
-        numbersOfTasks = self.__graph.getNodeNum()
+        numbersOfTasks = graph.getNodeNum()
 
-        nodes = self.__graph.getNodes()
-        queue = self.PriorityQueue(self.__graph)
+        nodes = graph.getNodes()
+        queue = self.PriorityQueue(graph)
         r = self.result()
         bestFinish = sys.maxsize
 
@@ -218,12 +220,12 @@ class CloudAcoProblemRepresentation:
         self.START_NODE_PHEROMONE = 0.0001
         self.__graph = graph
         self.__resourceSet = resourceSet
+        self.__instanceSet = CloudAcoResourceInstanceSet(resourceSet, instanceCount)
         self.__bandwidth = bandwidth
         self.__deadline = deadline
         self.__start = None
         self.__end = None
         self.__sortedWorkflowNodes = self.topologicalSort()
-        self.__instanceSet = CloudAcoResourceInstanceSet(resourceSet, instanceCount)
         self.__problemNodeList = self.createProblemNodeList(self.__graph, self.__instanceSet)
         self.__neighbours = self.calculateConstantNeighbours()
         self.__lacoSortedWorkflowNodes = []

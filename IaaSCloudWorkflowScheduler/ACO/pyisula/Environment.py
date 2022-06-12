@@ -1,5 +1,6 @@
 import logging
 from abc import abstractmethod
+import numpy as np
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -39,14 +40,17 @@ class Environment:
         return self.pheromoneMatrix
 
     def populatePheromoneMatrix(self, pheromoneValue):
-        if self.pheromoneMatrix == None or len(self.pheromoneMatrix) == 0:
+        if self.pheromoneMatrix is None or len(self.pheromoneMatrix) == 0:
             raise ValueError("The pheromone matrix is not properly configured. Verify the implementation of " +
                              "the createPheromoneMatrix() method.")
-        matrixRows = len(self.pheromoneMatrix)
-        matrixColumns = len(self.pheromoneMatrix[0])
-        for i in range(matrixRows):
-            for j in range(matrixColumns):
-                self.pheromoneMatrix[i][j] = pheromoneValue
+
+        self.pheromoneMatrix = np.full([len(self.pheromoneMatrix), len(self.pheromoneMatrix[0])], pheromoneValue)
+
+        # matrixRows = len(self.pheromoneMatrix)
+        # matrixColumns = len(self.pheromoneMatrix[0])
+        # for i in range(matrixRows):
+        #     for j in range(matrixColumns):
+        #         self.pheromoneMatrix[i][j] = pheromoneValue
 
     def __str__(self):
         return "Problem Representation: Rows " + str(len(self.problemRepresentation)) + " Columns " \
@@ -54,10 +58,12 @@ class Environment:
                 + str(len(self.pheromoneMatrix)) + " Columns " + str(len(self.pheromoneMatrix[0]))
 
     def applyFactorToPheromoneMatrix(self, factor):
-        matrixRows = len(self.pheromoneMatrix)
-        matrixColumns = len(self.pheromoneMatrix[0])
 
-        for i in range(matrixRows):
-            for j in range(matrixColumns):
-                newValue = self.pheromoneMatrix[i][j] * factor
-                self.pheromoneMatrix[i][j] = newValue
+        self.pheromoneMatrix = self.pheromoneMatrix * factor
+        # matrixRows = len(self.pheromoneMatrix)
+        # matrixColumns = len(self.pheromoneMatrix[0])
+        #
+        # for i in range(matrixRows):
+        #     for j in range(matrixColumns):
+        #         newValue = self.pheromoneMatrix[i][j] * factor
+        #         self.pheromoneMatrix[i][j] = newValue

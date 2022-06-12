@@ -43,7 +43,7 @@ class WorkflowPolicy(object):
             minTime = sys.maxsize
             for child in curNode.getChildren():
                 childNode = nodes.get(child.getId())
-                # thi = ceil(childNode.getLFT() - childNode.getRunTime() - float(child.getDataSize() / self._bandwidth))
+                # thisTime = round((childNode.getLFT() - childNode.getRunTime()) - float(child.getDataSize() / self._bandwidth))
                 thisTime = childNode.getLFT() - childNode.getRunTime()
                 thisTime -= floor(float(child.getDataSize() / self._bandwidth))
                 if thisTime < minTime:
@@ -89,7 +89,8 @@ class WorkflowPolicy(object):
             maxTime = -1
             for parent in curNode.getParents():
                 parentNode = nodes.get(parent.getId())
-                thisTime = parentNode.getEST() + round(float(parent.getDataSize() / self._bandwidth))
+                thisTime = round(parentNode.getEST() + float(parent.getDataSize() / self._bandwidth))
+                # thisTime = parentNode.getEST() + round(float(parent.getDataSize() / self._bandwidth))
                 # je suis ici :)
                 thisTime += parentNode.getRunTime()
                 if thisTime > maxTime:
