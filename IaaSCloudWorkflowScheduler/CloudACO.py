@@ -16,7 +16,7 @@ class CloudACO:
         self.__EVAP_RATIO = 0.1
         self.__Q0 = 0.9
         self.__iterCount = 5
-        self.__antCount = 50
+        self.__antCount = 5
         self.__pheromone = None
         self.__heuristic = []
         self.__probability = []
@@ -232,7 +232,9 @@ class CloudACO:
                 elif currentAnt.solutionCost <= self.__bestAnt.solutionCost and currentAnt.makeSpan <= deadline:
                     self.__bestAnt = currentAnt
                     # self.__bestAnt.saveSolution()
+                    # self.__bestAnt.saveSolution2()
                     print("best ant: " + str(self.__bestAnt.solutionCost))
+
                 environment.getProblemGraph().getInstanceSet().resetPerAnt()
 
                 antNum += 1
