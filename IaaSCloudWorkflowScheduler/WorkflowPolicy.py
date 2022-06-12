@@ -2,7 +2,7 @@ from InstanceSet import InstanceSet
 import sys
 from queue import Queue
 from WorkflowNode import WorkflowNode
-from math import ceil
+from math import ceil,floor
 import zope.interface
 import matplotlib.pyplot as plt
 
@@ -43,8 +43,9 @@ class WorkflowPolicy(object):
             minTime = sys.maxsize
             for child in curNode.getChildren():
                 childNode = nodes.get(child.getId())
+                # thi = ceil(childNode.getLFT() - childNode.getRunTime() - float(child.getDataSize() / self._bandwidth))
                 thisTime = childNode.getLFT() - childNode.getRunTime()
-                thisTime -= round(float(child.getDataSize() / self._bandwidth))
+                thisTime -= floor(float(child.getDataSize() / self._bandwidth))
                 if thisTime < minTime:
                     minTime = thisTime
 
@@ -88,7 +89,9 @@ class WorkflowPolicy(object):
             maxTime = -1
             for parent in curNode.getParents():
                 parentNode = nodes.get(parent.getId())
-                thisTime = parentNode.getEFT() + round(float(parent.getDataSize() / self._bandwidth))
+                thisTime = parentNode.getEST() + round(float(parent.getDataSize() / self._bandwidth))
+                # je suis ici :)
+                thisTime += parentNode.getRunTime()
                 if thisTime > maxTime:
                     maxTime = thisTime
 

@@ -60,22 +60,26 @@ class PcpD2Policy2(WorkflowPolicy):
 
     def findPartialCriticalPath(self, curNode):
         criticalPath = []
+
         while True:
             curNode = self.findCriticalParent(curNode)
             if curNode != None:
                 criticalPath.insert(0, curNode)
-            if curNode == None:
+            if curNode is None:
                 break
+
         return criticalPath
 
     def assignPath(self, path):
+        # last = self._graph.getNodes().get(self._graph.getEndId())
         last = len(path) - 1
         pathEST = path[0].getEST()
         pathEFT = path[last].getEFT()
+        # pathEFT = last.getEFT()
         PSD = path[last].getLFT() - pathEST
-
+        # PSD = last.getLFT() - pathEST
         i = 0
-        while i <= last:
+        while i <= len(path) - 1:
             curNode = path[i]
             ########################
             subDeadline = pathEST + int(floor(float(curNode.getEFT() - pathEST) / float(pathEFT - pathEST) * PSD))

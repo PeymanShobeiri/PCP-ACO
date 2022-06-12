@@ -1,11 +1,10 @@
-
 from .Adag import Adag
-# from DAG.Adag import Adag
-from lxml import etree , objectify
+from lxml import etree, objectify
 from .FilenameType import FilenameType
 
+
 class DagUtils:
-    
+
     def readWorkflowDescription(wfdescFile) -> Adag:
         dag = Adag()
         with open(wfdescFile, 'rb') as f:
@@ -51,26 +50,14 @@ class DagUtils:
         for ch in root.child:
             tmp_child = Adag.Child()
             tmp_child.setRef(ch.attrib['ref'])
-            parent_l= []
+            parent_l = []
             for p in ch.parent:
                 tmp_parent = Adag.Child.Parent()
                 tmp_parent.setRef(p.attrib['ref'])
-            parent_l.append(tmp_parent)
+                parent_l.append(tmp_parent)
             tmp_child.setParentList(parent_l)
             child_l.append(tmp_child)
 
         dag.setChildList(child_l)
 
-        return  dag
-
-
-
-
-
-
-
-
-
-
-
-
+        return dag
