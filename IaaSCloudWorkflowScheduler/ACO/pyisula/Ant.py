@@ -5,6 +5,7 @@ from .exception import SolutionConstructionException,ConfigurationException
 
 class Ant(ABC,Environment):
     def __init__(self):
+        super().__init__()
         self.__DONT_CHECK_NUMBERS = -1
         self.__ONE_POLICY = 1
         self.__currentIndex = 0
@@ -16,7 +17,7 @@ class Ant(ABC,Environment):
         return self.__solution
 
     def getSolutionAsString(self, solution):
-        if (solution != None):
+        if solution is not None:
             return ' '.join(solution)
 
     def getSolutionAsString(self):

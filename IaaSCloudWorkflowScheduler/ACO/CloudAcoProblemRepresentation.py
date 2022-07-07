@@ -76,7 +76,7 @@ class CloudAcoProblemRepresentation:
             childNumber2 = self.computeTotalChild(node2)
             self.setAllChildUnscheduled(node2)
             if childNumber1 > childNumber2:
-                return 0
+                return -1
             elif childNumber1 < childNumber2:
                 return 1
             else:
@@ -84,12 +84,14 @@ class CloudAcoProblemRepresentation:
 
         def remove(self):  # check for time complexity !!!
             try:
-                max = 0
-                for i in range(len(self.queue)):
-                    if self.compare(self.queue[i], self.queue[max]):
-                        max = i
-                item = self.queue[max]
-                del self.queue[max]
+                maxi = 0
+                i = 1
+                while i < len(self.queue):
+                    if self.compare(self.queue[i], self.queue[maxi]):
+                        maxi = i
+                    i += 1
+                item = self.queue[maxi]
+                del self.queue[maxi]
                 return item
             except IndexError:
                 print('Error !!!')

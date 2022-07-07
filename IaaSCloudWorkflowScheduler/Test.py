@@ -84,9 +84,6 @@ class test:
                       "\t\tcost of icpc: " + str(cost) + "\n" + \
                       "solution: \n"
 
-            #                       str(wb.getPolicy().solutionAsString())
-            ######### testing for table
-
             wb.getPolicy().solutionAsString()
             print(message)
 
@@ -104,8 +101,9 @@ class test:
                 for scheduler in methods:
                     wf = Workflow(workflowPath)
                 """
+
                 print("=================================MY_ACO")
-                problemRepresentation = CloudAcoProblemRepresentation(wb.graph, wb.resources, Constants.BANDWIDTH, deadline, 6)
+                problemRepresentation = CloudAcoProblemRepresentation(wb.graph, wb.resources, Constants.BANDWIDTH, deadline, 10)
                 environment = CloudAcoEnvironment(problemGraph=problemRepresentation)
                 cloudACO = CloudACO()
                 cloudACO.schedule(environment, deadline)

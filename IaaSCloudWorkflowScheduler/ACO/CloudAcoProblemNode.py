@@ -84,7 +84,7 @@ class CloudAcoProblemNode:
     def getNeighbourhood(self, environment):
         finalNeighbours = []
 
-        if environment.getProblemGraph().getNeighbours(self.getNode()) == None:
+        if environment.getProblemGraph().getNeighbours(self.getNode()) is None:
             finalNeighbours.append(environment.getProblemGraph().getStart())
             return finalNeighbours
         else:

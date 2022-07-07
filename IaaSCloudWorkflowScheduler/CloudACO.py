@@ -16,7 +16,7 @@ class CloudACO:
         self.__EVAP_RATIO = 0.1
         self.__Q0 = 0.9
         self.__iterCount = 100
-        self.__antCount = 100
+        self.__antCount = 150
         self.__pheromone = None
         self.__heuristic = []
         self.__probability = []

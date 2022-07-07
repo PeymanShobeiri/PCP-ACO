@@ -43,6 +43,7 @@ class WorkflowPolicy(object):
             minTime = sys.maxsize
             for child in curNode.getChildren():
                 childNode = nodes.get(child.getId())
+                # x = (childNode.getLFT() - childNode.getRunTime()) - float(child.getDataSize() / self._bandwidth)
                 # thisTime = round((childNode.getLFT() - childNode.getRunTime()) - float(child.getDataSize() / self._bandwidth))
                 thisTime = childNode.getLFT() - childNode.getRunTime()
                 thisTime -= floor(float(child.getDataSize() / self._bandwidth))
@@ -152,7 +153,7 @@ class WorkflowPolicy(object):
                     candidateNodes.put(parent.getId())
 
         for node in nodes.values():
-            node.setUnscheduled
+            node.setUnscheduled()
 
     def getDataSize(self, parent, child):
         size = 0

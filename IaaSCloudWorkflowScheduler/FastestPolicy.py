@@ -49,11 +49,10 @@ class FastestPolicy(WorkflowPolicy):
                 if isCandidate:
                     candidateNodes.put(child.getId())
 
-        totalTime = super().setEndNodeAST()
-
-        #####################  je suis ici
-        from math import ceil
-        maxCost = self._resources.getMaxCost()
-        totalCost = float(ceil(float(totalTime) / float(self._resources.getInterval())) * maxCost)
-        return totalCost
-        #####################
+        # totalTime = super().setEndNodeAST()
+        #
+        # #####################  je suis ici
+        # from math import ceil
+        # maxCost = self._resources.getMaxCost()
+        # totalCost = float(ceil(float(totalTime) / float(self._resources.getInterval())) * maxCost)
+        return 'None'

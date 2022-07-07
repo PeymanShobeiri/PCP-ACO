@@ -17,8 +17,8 @@ class CloudAcoResourceInstanceSet:
             resource = resources.getResource(j)
             instances = []
             for i in range(self.count):
-                id += 1
                 instances.append(CloudAcoResourceInstance(resource, id))
+                id += 1
             self.instances[resource] = instances
 
     def __init__(self, resources, count):

@@ -189,6 +189,7 @@ class CloudAcoWorkflow:
 class CloudAcoAntForWorkflow(Ant):
 
     def __init__(self, environment):
+        super().__init__()
         self.__currentNode = CloudAcoProblemNode()
         self.__environment = environment
         self.__id = CloudAcoWorkflow.antId + 1
@@ -201,7 +202,7 @@ class CloudAcoAntForWorkflow(Ant):
         self.__cacheUses = 0
         self.setSolution(CloudAcoProblemNode(environment.getProblemGraph().getGraphSize()))  # [] ?? 
         self.setVisited({})
-        if self.__heuristicCache == None:
+        if self.__heuristicCache is None:
             self.__heuristicCache = {}
 
     def getLastMakeSpan(self):
@@ -292,7 +293,7 @@ class CloudAcoAntForWorkflow(Ant):
         return rowsList
 
     def resetCache(self):
-        print("cache size:" + len(self.__heuristicCache) + " uses time:" + self.__cacheUses + " ario:", end=' ')
+        print("cache size:" + str(len(self.__heuristicCache)) + " uses time:" + str(self.__cacheUses) + " ario:", end=' ')
         if self.__cacheUses + len(self.__heuristicCache) == 0:
             print(0)
         else:
