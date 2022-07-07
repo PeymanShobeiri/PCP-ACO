@@ -75,10 +75,10 @@ class CloudAcoProblemRepresentation:
             self.setAllChildUnscheduled(node1)
             childNumber2 = self.computeTotalChild(node2)
             self.setAllChildUnscheduled(node2)
-            if childNumber1 > childNumber2:
-                return -1
-            elif childNumber1 < childNumber2:
+            if childNumber1 >= childNumber2:
                 return 1
+            elif childNumber1 < childNumber2:
+                return 0
             else:
                 return 0
 
@@ -152,12 +152,14 @@ class CloudAcoProblemRepresentation:
             maxTime = -1
             for child in curNode.getChildren():
                 childNode = nodes.get(child.getId())
-                thisTime = childNode.getUpRank() + round(float(child.getDataSize() / self.__bandwidth))
+                thisTime = round(childNode.getUpRank() + float(child.getDataSize() / self.__bandwidth))
+                # print(str(child.getId()) + " " + str(round(child.getDataSize() / self.__bandwidth)))
                 if thisTime > maxTime:
                     maxTime = thisTime
 
             maxMIPS = self.__resourceSet.getMeanMIPS()
             maxTime += round(float(curNode.getInstructionSize() / maxMIPS))
+
             curNode.setUpRank(maxTime)
             curNode.setScheduled()
 

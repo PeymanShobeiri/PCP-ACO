@@ -47,7 +47,7 @@ class CloudAcoResourceInstance:
 
     def getTaskDuration(self, node):
         runtime = round(float(node.getInstructionSize()) / self.getMIPS())
-        return runtime + self.getBandwidthDuration(node)
+        return round(runtime + self.getBandwidthDuration(node))
 
     def getInstanceRemainingTime(self, time):
         return max(self.__instanceFinishTime - time, 0)
@@ -88,16 +88,6 @@ class CloudAcoResourceInstance:
         node.setScheduled()
         self.__processedTasks.put(node)
 
-    def getBandwidthDuration(self, node):
-        duration = 0
-        for parent in node.getParents():
-            if not parent.getId() in self.__processedTasksIds:
-                tt = float(parent.getDataSize()) / (Constants.BANDWIDTH * 1.0)
-                if tt > duration:
-                    duration = tt
-
-        return duration
-
     def getTotalCost(self):
         return self.__totalCost
 
@@ -108,7 +98,7 @@ class CloudAcoResourceInstance:
         if countOfHoursToProvision == 0:
             countOfHoursToProvision = 1
         # not started yet!
-        if self.__currentTask == None:
+        if self.__currentTask is None:
             return self.getResource().getCost() * countOfHoursToProvision
         else:
             if newTaskDuration <= self.getInstanceRemainingTime(self.getInstanceReleaseTime()):

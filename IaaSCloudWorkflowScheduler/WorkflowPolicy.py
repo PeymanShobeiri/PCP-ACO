@@ -21,6 +21,7 @@ class WorkflowPolicy(object):
     def setRuntimes(self):
         maxMIPS = self._resources.getMaxMIPS()
         for node in self._graph.getNodes().values():
+            #  MET can be calculate here ! :)
             # test = round(node.getInstructionSize() / maxMIPS)
             node.setRunTime(round(node.getInstructionSize() / maxMIPS))
 
@@ -34,6 +35,8 @@ class WorkflowPolicy(object):
         curNode = nodes[self._graph.getEndId()]
         curNode.setLFT(deadline)
         curNode.setLST(deadline)
+        curNode.setAFT(deadline)
+        curNode.setAST(deadline)
         curNode.setScheduled()
         for parent in curNode.getParents():
             candidateNodes.put(parent.getId())
@@ -45,6 +48,7 @@ class WorkflowPolicy(object):
                 childNode = nodes.get(child.getId())
                 # x = (childNode.getLFT() - childNode.getRunTime()) - float(child.getDataSize() / self._bandwidth)
                 # thisTime = round((childNode.getLFT() - childNode.getRunTime()) - float(child.getDataSize() / self._bandwidth))
+
                 thisTime = childNode.getLFT() - childNode.getRunTime()
                 thisTime -= floor(float(child.getDataSize() / self._bandwidth))
                 if thisTime < minTime:
@@ -90,7 +94,7 @@ class WorkflowPolicy(object):
             maxTime = -1
             for parent in curNode.getParents():
                 parentNode = nodes.get(parent.getId())
-                thisTime = round(parentNode.getEST() + float(parent.getDataSize() / self._bandwidth))
+                thisTime = round(parentNode.getEST() + round(parent.getDataSize() / self._bandwidth))
                 # thisTime = parentNode.getEST() + round(float(parent.getDataSize() / self._bandwidth))
                 # je suis ici :)
                 thisTime += parentNode.getRunTime()

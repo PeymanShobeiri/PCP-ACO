@@ -11,7 +11,7 @@ import warnings
 
 class CloudAcoProblemNode:
     def __init__(self, node=None, resource=None, id=None):
-        if node != None:
+        if node is not None:
             self.h = None
             self.setByRW = None
             self.__node = node

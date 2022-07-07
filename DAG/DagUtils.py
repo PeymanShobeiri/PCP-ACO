@@ -34,6 +34,7 @@ class DagUtils:
             tmp2 = []
             for use in root.job[i].uses:
                 file_t = FilenameType()
+                file_t.setFile(use.attrib['file'])
                 file_t.setLink(use.attrib['link'])
                 file_t.setOptional(use.attrib['optional'])
                 file_t.setRegister(use.attrib['register'])

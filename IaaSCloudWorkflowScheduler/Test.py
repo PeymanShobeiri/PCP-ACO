@@ -93,15 +93,6 @@ class test:
                 wb.getPolicy().computeLSTandLFT(deadline)
                 wb.getPolicy().distributeDeadline()
 
-
-                # PSO
-                """
-                lacoSOL = None
-                methods = [PSO(100)]
-                for scheduler in methods:
-                    wf = Workflow(workflowPath)
-                """
-
                 print("=================================MY_ACO")
                 problemRepresentation = CloudAcoProblemRepresentation(wb.graph, wb.resources, Constants.BANDWIDTH, deadline, 10)
                 environment = CloudAcoEnvironment(problemGraph=problemRepresentation)

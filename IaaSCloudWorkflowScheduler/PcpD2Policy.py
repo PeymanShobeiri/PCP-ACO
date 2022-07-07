@@ -62,9 +62,9 @@ class PcpD2Policy(WorkflowPolicy):
         criticalPath = []
         while True:
             curNode = self.findCriticalParent(curNode)
-            if curNode != None:
+            if curNode is not None:
                 criticalPath.insert(0, curNode)
-            if curNode == None:
+            if curNode is None:
                 break
         return criticalPath
 
