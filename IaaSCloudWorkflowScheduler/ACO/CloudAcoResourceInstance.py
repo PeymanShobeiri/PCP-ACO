@@ -114,9 +114,9 @@ class CloudAcoResourceInstance:
         addedTimeToProvision = (countOfHoursToProvision * self.__PERIOD_DURATION)
 
         if self.__currentTask is None:
-            self.__instanceStartTime = node.getEST()
+            self.__instanceStartTime = max(self.getNewStartTime(node, env), 0)  # node.getEST()
             self.__instanceFinishTime = addedTimeToProvision
-            self.__currentStartTime = max(self.getNewStartTime(node, env), node.getEST())
+            self.__currentStartTime = max(self.getNewStartTime(node, env), 0)
             self.__currentTaskDuration = newTaskDuration
             self.__currentTask = node
             self.__totalCost += countOfHoursToProvision * self.__resource.getCost()
@@ -125,7 +125,7 @@ class CloudAcoResourceInstance:
             countOfHoursToProvision = max(int(round((newTaskDuration - remain) / float(self.__PERIOD_DURATION))), 0)
             addedTimeToProvision = (countOfHoursToProvision * self.__PERIOD_DURATION)
             self.__instanceFinishTime += addedTimeToProvision
-            self.__currentStartTime = max(self.getNewStartTime(node, env), node.getEST())
+            self.__currentStartTime = max(self.getNewStartTime(node, env), self.__currentTask.getAFT())       # it shoudn't be last node.AFT ??
             # self.__currentStartTime = max(int(self.getInstanceReleaseTime()), node.getEST())  # for id05  is (15, 21)
             self.__currentTaskDuration = newTaskDuration
             self.__currentTask = node

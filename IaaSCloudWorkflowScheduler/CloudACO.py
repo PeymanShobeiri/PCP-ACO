@@ -73,7 +73,7 @@ class CloudACO:
 
         bad = False
 
-        if currentFT < destination.getNode().getDeadline():
+        if currentFT <= destination.getNode().getDeadline():
             h1 = 1
         else:
             h1 = max(0, (((destination.getNode().getLFT() - currentFT) + 1) / (
@@ -291,12 +291,12 @@ class CloudACO:
 
                 if self.__bestAnt is None and currentAnt.makeSpan <= deadline:
                     self.__bestAnt = currentAnt
-                    # self.__bestAnt.saveSolution()
+                    self.__bestAnt.saveSolution()
                     print("best ant: " + str(self.__bestAnt.solutionCost))
                 elif currentAnt.solutionCost <= self.__bestAnt.solutionCost and currentAnt.makeSpan <= deadline:
                     self.__bestAnt = currentAnt
-                    # self.__bestAnt.saveSolution()
-                    # self.__bestAnt.saveSolution2()
+                    self.__bestAnt.saveSolution()
+                    self.__bestAnt.saveSolution2()
                     print("best ant: " + str(self.__bestAnt.solutionCost))
 
                 environment.getProblemGraph().getInstanceSet().resetPerAnt()
