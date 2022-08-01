@@ -75,23 +75,23 @@ class CloudAcoProblemRepresentation:
             self.setAllChildUnscheduled(node1)
             childNumber2 = self.computeTotalChild(node2)
             self.setAllChildUnscheduled(node2)
-            if childNumber1 >= childNumber2:
+            if childNumber2 > childNumber1:
                 return 1
-            elif childNumber1 < childNumber2:
-                return 0
+            elif childNumber2 < childNumber1:
+                return -1
             else:
                 return 0
 
         def remove(self):  # check for time complexity !!!
             try:
-                maxi = 0
-                i = 1
-                while i < len(self.queue):
-                    if self.compare(self.queue[i], self.queue[maxi]):
-                        maxi = i
+                # maxi = 0
+                i = 0
+                while i < len(self.queue) - 1:
+                    if self.compare(self.queue[i], self.queue[i+1]) == 1:
+                        self.queue[i], self.queue[i+1] = self.queue[i+1], self.queue[i]
                     i += 1
-                item = self.queue[maxi]
-                del self.queue[maxi]
+                item = self.queue.pop(0)
+                # del self.queue[maxi]
                 return item
             except IndexError:
                 print('Error !!!')
@@ -224,12 +224,12 @@ class CloudAcoProblemRepresentation:
         self.START_NODE_PHEROMONE = 0.0001
         self.__graph = graph
         self.__resourceSet = resourceSet
-        self.__instanceSet = CloudAcoResourceInstanceSet(resourceSet, instanceCount)
+        self.__instanceSet = CloudAcoResourceInstanceSet(resourceSet, instanceCount)    # create a maxpaller * resource_type instance
         self.__bandwidth = bandwidth
         self.__deadline = deadline
         self.__start = None
         self.__end = None
-        self.__sortedWorkflowNodes = self.topologicalSort()
+        self.__sortedWorkflowNodes = self.topologicalSort()         # topology sort of nodes whiich comes first on the table
         self.__problemNodeList = self.createProblemNodeList(self.__graph, self.__instanceSet)
         self.__neighbours = self.calculateConstantNeighbours()
         self.__lacoSortedWorkflowNodes = []

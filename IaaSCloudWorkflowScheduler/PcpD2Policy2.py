@@ -63,7 +63,7 @@ class PcpD2Policy2(WorkflowPolicy):
 
         while True:
             curNode = self.findCriticalParent(curNode)
-            if curNode != None:
+            if curNode is not None:
                 criticalPath.insert(0, curNode)
             if curNode is None:
                 break
@@ -137,9 +137,10 @@ class PcpD2Policy2(WorkflowPolicy):
         for i in range(len(criticalPath)):
             self.updateChildrenEST(criticalPath[i])
             self.updateParentsLFT(criticalPath[i])
-
-        for i in range(len(criticalPath)):
             self.assignParents(criticalPath[i])
+
+        # for i in range(len(criticalPath)):
+        #     self.assignParents(criticalPath[i])
 
         self.assignParents(curNode)
 

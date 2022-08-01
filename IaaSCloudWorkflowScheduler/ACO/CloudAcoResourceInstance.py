@@ -95,7 +95,7 @@ class CloudAcoResourceInstance:
         newTaskDuration = self.getTaskDuration(node)
         countOfHoursToProvision = int(ceil(newTaskDuration / float(self.__PERIOD_DURATION)))
 
-        if countOfHoursToProvision == 0:
+        if countOfHoursToProvision == 0:    # we don't need this becouse it's alwayes 1 at Least
             countOfHoursToProvision = 1
         # not started yet!
         if self.__currentTask is None:

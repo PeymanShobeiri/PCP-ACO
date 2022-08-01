@@ -1,6 +1,6 @@
 import random
 import sys
-from threading import Thread , Lock
+from threading import Thread, Lock
 import matplotlib.pyplot as plt
 import numpy as np
 from concurrent.futures import ThreadPoolExecutor
@@ -9,6 +9,7 @@ from .ACO.CloudAcoProblemNode import CloudAcoProblemNode
 
 lock = Lock()
 
+
 class CloudACO:
 
     def __init__(self):
@@ -16,7 +17,7 @@ class CloudACO:
         self.__P_RATIO = 0.4
         self.__EVAP_RATIO = 0.1
         self.__Q0 = 0.9
-        self.__iterCount = 5
+        self.__iterCount = 10
         self.__antCount = 5
         self.__pheromone = None
         self.__heuristic = []
@@ -25,13 +26,13 @@ class CloudACO:
         self.__bestAnt = None
         self.__environment = None
         self.__heuristicCache = dict()
-        # changing
+        # changing ...
         self.deadline = None
         self.workflow = None
 
     def initPheromone(self, size):
-        self.__heuristic = [None] * size
-        self.__probability = [None] * size
+        self.__heuristic = np.zeros(size)
+        self.__probability = np.zeros(size)
         self.__pheromone = np.full((size, size), 0.000011)
 
     def initColony(self, antCount, graphSize):
@@ -87,7 +88,7 @@ class CloudACO:
         tempDuration = 0.0
 
         for entry in self.__environment.getProblemGraph().getInstanceSet().getInstances().items():
-            test3 = entry[1]
+            test3 = entry[1]    # test3 is the instance on the each resource
             for instance in test3:
                 temp = instance.getCost(destination.getNode())
                 tempDuration = instance.getTaskDuration(destination.getNode())
@@ -149,6 +150,9 @@ class CloudACO:
                 bestIndex = i
             i += 1
 
+        self.__probability = self.__probability / sum(self.__probability)
+        # print(self.__probability)
+
         return bestIndex
 
     def rwsSelection(self, candidates, probabilities):
@@ -156,6 +160,7 @@ class CloudACO:
         total = 0.0
         node = None
         i = 0
+
         while i < len(candidates) and total < value:
             node = candidates[i]
             probability = probabilities[i]
@@ -185,7 +190,8 @@ class CloudACO:
 
     def updatePheromone(self):
 
-        self.__pheromone = self.__pheromone * self.__EVAP_RATIO
+        # self.__pheromone = self.__pheromone * self.__EVAP_RATIO
+        self.__pheromone = self.__pheromone * (1 - self.__EVAP_RATIO)
 
         if self.__bestAnt is not None:
             self.releasePheromone(self.__bestAnt)
@@ -237,13 +243,13 @@ class CloudACO:
 
     def schedule(self, environment, deadline):
         workflow = environment.getProblemGraph()
-        self.workflow = environment.getProblemGraph()
-        self.deadline = deadline
+        # self.workflow = environment.getProblemGraph()
+        # self.deadline = deadline
         self.__environment = environment
-        self.initPheromone(len(environment.getProblemGraph().getProblemNodeList()) * 2)
+        self.initPheromone(len(environment.getProblemGraph().getProblemNodeList()) * 2)  # why there is two phermon matrix
         itr = 0
         while itr < self.__iterCount:
-            self.initColony(self.__antCount, self.workflow.getGraphSize())
+            self.initColony(self.__antCount, workflow.getGraphSize())
             currentAnt = None
             self.__heuristicCache = {}
             dest = None
@@ -273,7 +279,7 @@ class CloudACO:
                 end = currentAnt.solution[len(currentAnt.solution) - 1]
                 currentAnt.makeSpan = end.getNode().getAFT()
 
-                currentAnt.solutionCost = self.getSolutionCost()
+                currentAnt.solutionCost = self.getSolutionCost()    # it loops all over all instance anf if the cost is != 0 it + by result
 
                 if self.__bestAnt is None and currentAnt.makeSpan <= deadline:
                     self.__bestAnt = currentAnt
@@ -319,7 +325,7 @@ class CloudACO:
             self._solution[self.currentPosition] = node
             if (node.getNode().getId()).lower() == "end" or self.currentPosition == len(self._solution):
                 self.isCompleted = True
-            return self.currentPosition
+            # return self.currentPosition
 
         def __str__(self):
             return self._solutionString
@@ -361,7 +367,7 @@ class CloudACO:
                 cellLoc='center',
                 loc='upper right')
 
-            ax.set_title('cost {}'.format(self._solutionCost),
+            ax.set_title('id {}'.format(self._id),
                          fontweight="bold")
             # table.set_fontsize(24)
             table.scale(1, 1.5)

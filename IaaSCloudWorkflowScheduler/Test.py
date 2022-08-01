@@ -9,7 +9,6 @@ from IaaSCloudWorkflowScheduler.WorkflowBroker import WorkflowBroker
 from IaaSCloudWorkflowScheduler.ScheduleType import ScheduleType
 from IaaSCloudWorkflowScheduler.ACO.CloudAcoAntForWorkflow import CloudAcoWorkflow
 from IaaSCloudWorkflowScheduler.CloudACO import CloudACO
-# from OtherCloudWorkflowScheduler.methods.PSO import PSO
 from OtherCloudWorkflowScheduler.methods.Scheduler import Scheduler
 import time
 
@@ -21,8 +20,8 @@ class test:
         try:
             wb = WorkflowBroker(WfFile, ScheduleType.Fastest)
             CH = wb.schedule(startTime, deadline)
-            wb.getPolicy().computeESTandEFT(startTime)
-            wb.getPolicy().computeLSTandLFT(deadline)
+            # wb.getPolicy().computeESTandEFT(startTime)
+            # wb.getPolicy().computeLSTandLFT(deadline)
             MH = wb.graph.getNodes()[wb.graph.getEndId()].getAST()
             print("Fastest: cost= " + str(CH) + " time= " + str(MH))
         except Exception as e:
@@ -36,8 +35,8 @@ class test:
             wb = WorkflowBroker(wfFile, ScheduleType.Cheapest)
             CC = wb.schedule(startTime, deadline)
             MC = wb.graph.getNodes()[wb.graph.getEndId()].getAST()
-            wb.getPolicy().computeESTandEFT(startTime)
-            wb.getPolicy().computeLSTandLFT(deadline)
+            # wb.getPolicy().computeESTandEFT(startTime)
+            # wb.getPolicy().computeLSTandLFT(deadline)
             print("Cheapest: cost= " + str(CC) + " time= " + str(MC))
         except Exception as e:
             print("Error in creating workflow broker!!!!" + '  ' + str(e))
@@ -47,7 +46,7 @@ class test:
     def scheduleWorkflow(self):
         workflowPath = "/Users/apple/Desktop/cloud_aco-develop/src/main/resources/WfDescFiles/Montage_25.xml"
         startTime = 0
-        deadline = 1000
+        deadline = 71
         finishTime = None
         MH = 0
         MC = 0
@@ -65,7 +64,7 @@ class test:
         alpha = 1.5
         while alpha <= 5:
             # deadline = round(alpha * MH)
-            deadline = 71
+            # deadline = 71
             try:
                 wb = WorkflowBroker(workflowPath, ScheduleType.IC_PCPD2)
             except Exception as e:
@@ -73,8 +72,8 @@ class test:
 
             realStartTime = round(time.time() * 1000)
             cost = wb.schedule(startTime, deadline)
-            wb.getPolicy().computeESTandEFT(startTime)
-            wb.getPolicy().computeLSTandLFT(deadline)
+            # wb.getPolicy().computeESTandEFT(startTime)
+            # wb.getPolicy().computeLSTandLFT(deadline)
             realFinishTime = round(time.time() * 1000)
             realFinishTime -= realStartTime
             finishTime = wb.graph.getNodes()[wb.graph.getEndId()].getEST()
@@ -84,6 +83,7 @@ class test:
                       "\t\tcost of icpc: " + str(cost) + "\n" + \
                       "solution: \n"
 
+            # wb.getPolicy().savesss()
             wb.getPolicy().solutionAsString()
             print(message)
 
@@ -92,9 +92,12 @@ class test:
                 wb.getPolicy().computeESTandEFT(startTime)
                 wb.getPolicy().computeLSTandLFT(deadline)
                 wb.getPolicy().distributeDeadline()
+                # wb.getPolicy().setEndNodeEST()
+                wb.getGraph().getNodes()[wb.getGraph().getStartId()].setDeadline(0)
+                wb.getGraph().getNodes()[wb.getGraph().getEndId()].setDeadline(deadline)
 
                 print("=================================MY_ACO")
-                problemRepresentation = CloudAcoProblemRepresentation(wb.graph, wb.resources, Constants.BANDWIDTH, deadline, 10)
+                problemRepresentation = CloudAcoProblemRepresentation(wb.graph, wb.resources, Constants.BANDWIDTH, deadline, 6)
                 environment = CloudAcoEnvironment(problemGraph=problemRepresentation)
                 cloudACO = CloudACO()
                 cloudACO.schedule(environment, deadline)

@@ -331,7 +331,7 @@ class CloudAcoAntForWorkflow(Ant):
 
     def clear(self):
         self.setCurrentIndex(0)
-        if self.getSolution() != None:
+        if self.getSolution() is not None:
             for i in range(len(self.getSolution())):
                 self.getSolution()[i] = None
 

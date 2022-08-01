@@ -33,18 +33,14 @@ class WorkflowGraph:
         return size
 
     class counter(object):
-        def __init__(self, instSize=-2):
-            if instSize == -2:
-                self.__meanInstSize = 0
-            else:
-                self.__meanInstSize = instSize
-            if instSize == -2:
+        def __init__(self, instSize=None):
+            if instSize is None:
                 self.__maxInstSize = -1
-            else:
-                self.__maxInstSize = instSize
-            if instSize == -2:
+                self.__meanInstSize = 0
                 self.__no = 0
             else:
+                self.__maxInstSize = instSize
+                self.__meanInstSize = instSize
                 self.__no = 1
 
         def add(self, instSize):

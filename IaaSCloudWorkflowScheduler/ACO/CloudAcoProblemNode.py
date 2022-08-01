@@ -15,7 +15,8 @@ class CloudAcoProblemNode:
             self.h = None
             self.setByRW = None
             self.__node = node
-            self.__defaultNode = WorkflowNode(node)
+            # self.__defaultNode = WorkflowNode(node)
+            self.__defaultNode = node
             self.__resource = resource
             self.__visited = False
             self.__id = id

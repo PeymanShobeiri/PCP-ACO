@@ -7,11 +7,10 @@ import warnings
 
 
 class CloudAcoResourceInstanceSet:
-    instances = {}
-    count = None
+    # instances = {}
+    # count = None
 
     def initialize(self, resources):
-        # instances = {}
         id = 0
         for j in range(resources.getSize()):
             resource = resources.getResource(j)

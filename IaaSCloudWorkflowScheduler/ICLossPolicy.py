@@ -166,7 +166,7 @@ class ICLossPolicy(WorkflowPolicy):
                         i += 1
                 
                 inst.getTasks().remove(place)
-    
+
 
     def checkInstanceWithLFT(self, curNode, curInst):
         finishTime = curInst.getFinishTime()
