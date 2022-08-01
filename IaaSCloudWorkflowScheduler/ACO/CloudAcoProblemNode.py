@@ -66,10 +66,19 @@ class CloudAcoProblemNode:
     def setVisited(self, environment):
         self.getNode().setScheduled()
         self.__visited = True
+        if self.getNode().getId() == 'start':
+            mxitr = len(environment.getProblemGraph().getInstanceSet().getInstances())
+        else:
+            mxitr = environment.getProblemGraph().getInstanceSet().getCount() * len(
+                environment.getProblemGraph().getInstanceSet().getInstances())
+        count = 0
         problemNodes = environment.getProblemGraph().getProblemNodeList()
         for node in problemNodes:
             if node.getNode().getId() == self.getNode().getId():
                 node._setVisited()
+                count += 1
+            if count >= mxitr:
+                break
 
     def getId(self):
         return self.__id

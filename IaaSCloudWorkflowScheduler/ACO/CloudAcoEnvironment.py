@@ -14,14 +14,14 @@ class CloudAcoEnvironment(Environment):
             super().__init__(problemRepresentation)
         else:
             self.problemGraph = problemGraph
-            tmp = np.full([100, 100], 0.0)
+            # tmp = np.full([100, 100], 0.0)
             # tmp = []
             # for row in range(100):
             #     tmp.append([float(0) for x in range(100)])
-            super().__init__(tmp)
+            # super().__init__(tmp)
 
-            self.setPheromoneMatrix(self.createPheromoneMatrix())
-            self.populatePheromoneMatrix(0.01)
+            # self.setPheromoneMatrix(self.createPheromoneMatrix())
+            # self.populatePheromoneMatrix(0.01)
 
     def createPheromoneMatrix(self):
         if self.problemGraph is None:

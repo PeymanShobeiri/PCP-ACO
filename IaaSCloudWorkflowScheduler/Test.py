@@ -10,6 +10,7 @@ from IaaSCloudWorkflowScheduler.ScheduleType import ScheduleType
 from IaaSCloudWorkflowScheduler.ACO.CloudAcoAntForWorkflow import CloudAcoWorkflow
 from IaaSCloudWorkflowScheduler.CloudACO import CloudACO
 from OtherCloudWorkflowScheduler.methods.Scheduler import Scheduler
+from math import ceil
 import time
 
 
@@ -46,7 +47,7 @@ class test:
     def scheduleWorkflow(self):
         workflowPath = "/Users/apple/Desktop/cloud_aco-develop/src/main/resources/WfDescFiles/Montage_25.xml"
         startTime = 0
-        deadline = 71
+        deadline = 1000
         finishTime = None
         MH = 0
         MC = 0
@@ -63,7 +64,7 @@ class test:
 
         alpha = 1.5
         while alpha <= 5:
-            # deadline = round(alpha * MH)
+            deadline = ceil(alpha * MH)
             # deadline = 71
             try:
                 wb = WorkflowBroker(workflowPath, ScheduleType.IC_PCPD2)
@@ -91,10 +92,15 @@ class test:
                 wb = WorkflowBroker(workflowPath, ScheduleType.IC_PCPD2_2)
                 wb.getPolicy().computeESTandEFT(startTime)
                 wb.getPolicy().computeLSTandLFT(deadline)
+
+                wb.getGraph().getNodes()[wb.getGraph().getStartId()].setDeadline(0)
+                wb.getGraph().getNodes()[wb.getGraph().getStartId()].setAFT(0)
+                wb.getGraph().getNodes()[wb.getGraph().getEndId()].setDeadline(deadline)
+                wb.getGraph().getNodes()[wb.getGraph().getStartId()].setScheduled()
+                wb.getGraph().getNodes()[wb.getGraph().getEndId()].setScheduled()
+
                 wb.getPolicy().distributeDeadline()
                 # wb.getPolicy().setEndNodeEST()
-                wb.getGraph().getNodes()[wb.getGraph().getStartId()].setDeadline(0)
-                wb.getGraph().getNodes()[wb.getGraph().getEndId()].setDeadline(deadline)
 
                 print("=================================MY_ACO")
                 problemRepresentation = CloudAcoProblemRepresentation(wb.graph, wb.resources, Constants.BANDWIDTH, deadline, 6)

@@ -17,8 +17,8 @@ class CloudACO:
         self.__P_RATIO = 0.4
         self.__EVAP_RATIO = 0.1
         self.__Q0 = 0.9
-        self.__iterCount = 10
-        self.__antCount = 5
+        self.__iterCount = 20
+        self.__antCount = 10
         self.__pheromone = None
         self.__heuristic = []
         self.__probability = []
@@ -27,8 +27,8 @@ class CloudACO:
         self.__environment = None
         self.__heuristicCache = dict()
         # changing ...
-        self.deadline = None
-        self.workflow = None
+        # self.deadline = None
+        # self.workflow = None
 
     def initPheromone(self, size):
         self.__heuristic = np.zeros(size)
@@ -77,7 +77,7 @@ class CloudACO:
             h1 = 1
         else:
             h1 = max(0, (((destination.getNode().getLFT() - currentFT) + 1) / (
-                    (destination.getNode().getLFT() - destination.getNode().getDeadline() + 1) * 1.0)))
+                    (destination.getNode().getLFT() - destination.getNode().getDeadline()) + 1 * 1.0)))
             bad = True
 
         maxCost = -1
@@ -88,7 +88,7 @@ class CloudACO:
         tempDuration = 0.0
 
         for entry in self.__environment.getProblemGraph().getInstanceSet().getInstances().items():
-            test3 = entry[1]    # test3 is the instance on the each resource
+            test3 = entry[1]  # test3 is the instance on the each resource
             for instance in test3:
                 temp = instance.getCost(destination.getNode())
                 tempDuration = instance.getTaskDuration(destination.getNode())
@@ -136,6 +136,8 @@ class CloudACO:
                 bestOption = self.__heuristic[i]
                 bestOptionIndex = i
 
+        # print("sum is : " + str(sum(self.__heuristic)))
+        # bestOptionIndex = np.argmax(self.__heuristic)
         return bestOptionIndex
 
     def calculateProbability(self, current, candidateNodes):
@@ -160,6 +162,10 @@ class CloudACO:
         total = 0.0
         node = None
         i = 0
+
+        # y = np.cumsum(probabilities)
+        # ss = np.argmax(y >= value)
+        # return candidates[ss]
 
         while i < len(candidates) and total < value:
             node = candidates[i]
@@ -191,10 +197,11 @@ class CloudACO:
     def updatePheromone(self):
 
         # self.__pheromone = self.__pheromone * self.__EVAP_RATIO
-        self.__pheromone = self.__pheromone * (1 - self.__EVAP_RATIO)
 
         if self.__bestAnt is not None:
             self.releasePheromone(self.__bestAnt)
+
+        self.__pheromone = self.__pheromone * (1 - self.__EVAP_RATIO)
 
         self.__pheromone[self.__pheromone > 1] = 1
         self.__pheromone[self.__pheromone < 0.2] = 0.2
@@ -206,47 +213,47 @@ class CloudACO:
         #         elif self.__pheromone[j][i] < 0.2:
         #             self.__pheromone[j][i] = 0.2
 
-    def move(self, currentAnt):
-        # currentAnt = self.__colony[antNum]
-        currentAnt.currentNode = self.workflow.getStart()
-        currentAnt.currentPosition = 0
-        while not currentAnt.isCompleted:
-            candidateNodes = currentAnt.currentNode.getNeighbourhood(self.__environment)
-            bestOptionByHeuristic = self.calculateHeuristic(candidateNodes, currentAnt.currentPosition)
-            bestOptionByProbability = self.calculateProbability(currentAnt, candidateNodes)
-
-            if random.random() < self.__Q0:
-                dest = candidateNodes[bestOptionByProbability]
-            else:
-                dest = self.rwsSelection(candidateNodes, self.__probability)
-            currentAnt.currentNode.setVisited(self.__environment)
-            dest.setVisited(self.__environment)
-            dest.getResource().setCurrentTask(dest)
-            currentAnt.setDest(dest)
-
-        end = currentAnt.solution[len(currentAnt.solution) - 1]
-        currentAnt.makeSpan = end.getNode().getAFT()
-
-        currentAnt.solutionCost = self.getSolutionCost()
-        with lock:
-            if self.__bestAnt is None and currentAnt.makeSpan <= self.deadline:
-                self.__bestAnt = currentAnt
-                # self.__bestAnt.saveSolution()
-                print("best ant: " + str(self.__bestAnt.solutionCost))
-            elif currentAnt.solutionCost <= self.__bestAnt.solutionCost and currentAnt.makeSpan <= self.deadline:
-                self.__bestAnt = currentAnt
-                # self.__bestAnt.saveSolution()
-                # self.__bestAnt.saveSolution2()
-                print("best ant: " + str(self.__bestAnt.solutionCost))
-
-        self.__environment.getProblemGraph().getInstanceSet().resetPerAnt()
+    # def move(self, currentAnt):
+    #     # currentAnt = self.__colony[antNum]
+    #     currentAnt.currentNode = self.workflow.getStart()
+    #     currentAnt.currentPosition = 0
+    #     while not currentAnt.isCompleted:
+    #         candidateNodes = currentAnt.currentNode.getNeighbourhood(self.__environment)
+    #         bestOptionByHeuristic = self.calculateHeuristic(candidateNodes, currentAnt.currentPosition)
+    #         bestOptionByProbability = self.calculateProbability(currentAnt, candidateNodes)
+    #
+    #         if random.random() < self.__Q0:
+    #             dest = candidateNodes[bestOptionByProbability]
+    #         else:
+    #             dest = self.rwsSelection(candidateNodes, self.__probability)
+    #         currentAnt.currentNode.setVisited(self.__environment)
+    #         dest.setVisited(self.__environment)
+    #         dest.getResource().setCurrentTask(dest)
+    #         currentAnt.setDest(dest)
+    #
+    #     end = currentAnt.solution[len(currentAnt.solution) - 1]
+    #     currentAnt.makeSpan = end.getNode().getAFT()
+    #
+    #     currentAnt.solutionCost = self.getSolutionCost()
+    #     with lock:
+    #         if self.__bestAnt is None and currentAnt.makeSpan <= self.deadline:
+    #             self.__bestAnt = currentAnt
+    #             # self.__bestAnt.saveSolution()
+    #             print("best ant: " + str(self.__bestAnt.solutionCost))
+    #         elif currentAnt.solutionCost <= self.__bestAnt.solutionCost and currentAnt.makeSpan <= self.deadline:
+    #             self.__bestAnt = currentAnt
+    #             # self.__bestAnt.saveSolution()
+    #             # self.__bestAnt.saveSolution2()
+    #             print("best ant: " + str(self.__bestAnt.solutionCost))
+    #
+    #     self.__environment.getProblemGraph().getInstanceSet().resetPerAnt()
 
     def schedule(self, environment, deadline):
         workflow = environment.getProblemGraph()
         # self.workflow = environment.getProblemGraph()
         # self.deadline = deadline
         self.__environment = environment
-        self.initPheromone(len(environment.getProblemGraph().getProblemNodeList()) * 2)  # why there is two phermon matrix
+        self.initPheromone(len(environment.getProblemGraph().getProblemNodeList()))
         itr = 0
         while itr < self.__iterCount:
             self.initColony(self.__antCount, workflow.getGraphSize())
@@ -262,6 +269,7 @@ class CloudACO:
                 currentAnt = self.__colony[antNum]
                 currentAnt.currentNode = workflow.getStart()
                 currentAnt.currentPosition = 0
+                currentAnt.currentNode.setVisited(environment)
                 while not currentAnt.isCompleted:
                     candidateNodes = currentAnt.currentNode.getNeighbourhood(environment)
                     bestOptionByHeuristic = self.calculateHeuristic(candidateNodes, currentAnt.currentPosition)
@@ -271,15 +279,15 @@ class CloudACO:
                         dest = candidateNodes[bestOptionByProbability]
                     else:
                         dest = self.rwsSelection(candidateNodes, self.__probability)
-                    currentAnt.currentNode.setVisited(environment)
+
                     dest.setVisited(environment)
-                    dest.getResource().setCurrentTask(dest)
+                    dest.getResource().setCurrentTask(dest, environment)
                     currentAnt.setDest(dest)
 
-                end = currentAnt.solution[len(currentAnt.solution) - 1]
+                end = currentAnt.solution[len(currentAnt.solution) - 2]
                 currentAnt.makeSpan = end.getNode().getAFT()
 
-                currentAnt.solutionCost = self.getSolutionCost()    # it loops all over all instance anf if the cost is != 0 it + by result
+                currentAnt.solutionCost = self.getSolutionCost()  # it loops all over all instance anf if the cost is != 0 it + by result
 
                 if self.__bestAnt is None and currentAnt.makeSpan <= deadline:
                     self.__bestAnt = currentAnt
@@ -309,32 +317,32 @@ class CloudACO:
             # Thread.__init__(self)
 
             self.isCompleted = False
-            self._id = id
-            self._solution = []
+            self.id = id
+            self.solution = []
             for _ in range(size):
-                self._solution.append(CloudAcoProblemNode())
-            self._solutionString = ""
-            self._solutionCost = 0.0
-            self._makeSpan = 0.0
+                self.solution.append(CloudAcoProblemNode())
+            self.solutionString = ""
+            self.solutionCost = 0.0
+            self.makeSpan = 0.0
             self.currentNode = None
             self.currentPosition = 0
 
         def setDest(self, node):
             self.currentNode = node
             self.currentPosition += 1
-            self._solution[self.currentPosition] = node
-            if (node.getNode().getId()).lower() == "end" or self.currentPosition == len(self._solution):
+            self.solution[self.currentPosition] = node
+            if (node.getNode().getId()).lower() == "end" or self.currentPosition == len(self.solution):
                 self.isCompleted = True
             # return self.currentPosition
 
         def __str__(self):
-            return self._solutionString
+            return self.solutionString
 
         def saveSolution(self):
             headersList = ["N", "R", "I", "I-cost", "R-cost", "AST", "runtime", "AFT", "SD", "LFT", "I-start", "H"]
 
             rowsList = []
-            for node in self._solution:
+            for node in self.solution:
                 if node is None:
                     continue
 
@@ -367,7 +375,7 @@ class CloudACO:
                 cellLoc='center',
                 loc='upper right')
 
-            ax.set_title('id {}'.format(self._id),
+            ax.set_title('id {}'.format(self.id),
                          fontweight="bold")
             # table.set_fontsize(24)
             table.scale(1, 1.5)
@@ -377,7 +385,7 @@ class CloudACO:
             headersList = ["N", "R", "I", "I-cost", "R-cost", "AST", "runtime", "AFT", "SD", "LFT", "I-start", "H"]
 
             rowsList = []
-            for node in self._solution:
+            for node in self.solution:
                 if node is None:
                     continue
 
@@ -416,9 +424,9 @@ class CloudACO:
             table.scale(1, 1.5)
             plt.show()
 
-        @property
-        def solution(self):
-            return self._solution
+        # @property
+        # def solution(self):
+        #     return self.solution
 
     class HeuristicCondition(object):
         def __init__(self, curDuration, curCost, curStartTime, instanceId):
@@ -440,14 +448,23 @@ class CloudACO:
             self.__curCost = curCost
 
         def __eq__(self, other):
-            if id(self) == id(other):
-                return True
-            if type(self) != type(other):
-                return False
+            # if id(self) == id(other):
+            #     return True
+            # if type(self) != type(other):
+            #     return False
             if other.__curDuration == self.__curDuration and other.__curCost == self.__curCost and other.__curStartTime == self.__curStartTime and other.__instanceId == self.__instanceId:
                 return True
             else:
                 return False
 
+        def __ne__(self, other):
+            if other.__curDuration != self.__curDuration and other.__curCost != self.__curCost and other.__curStartTime != self.__curStartTime and other.__instanceId != self.__instanceId:
+                return True
+            else:
+                return False
+
+        def __key(self):
+            return (self.__curCost, self.__curDuration, self.__curStartTime, self.__instanceId)
+
         def __hash__(self):
-            return hash(str(self))
+            return hash(self.__key())

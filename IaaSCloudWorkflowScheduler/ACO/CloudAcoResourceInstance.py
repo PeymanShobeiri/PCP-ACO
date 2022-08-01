@@ -3,6 +3,43 @@ from queue import Queue
 from ..Constants import Constants
 
 
+# from ..PcpD2Policy2 import PcpD2Policy2
+
+#
+# def updateChildrenEST(parentNode, env):
+#     for child in parentNode.getChildren():
+#         childNode = env.getProblemGraph().getGraph().getNodes().get(child.getId())
+#         newEST = None
+#
+#         if not childNode.isScheduled():
+#             if parentNode.isScheduled():
+#                 newEST = parentNode.getDeadline() + round(float(child.getDataSize() / Constants.BANDWIDTH))
+#             else:
+#                 newEST = parentNode.getEFT() + round(float(child.getDataSize()) / Constants.BANDWIDTH)
+#
+#             if childNode.getEST() < newEST:
+#                 childNode.setEST(newEST)
+#                 childNode.setEFT(int(newEST + round(childNode.getRunTime())))
+#                 updateChildrenEST(childNode, env)
+#
+#
+# def updateParentsLFT(childNode, env):
+#     for parent in childNode.getParents():
+#         parentNode = env.getProblemGraph().getGraph().getNodes().get(parent.getId())
+#         newLFT = None
+#
+#         if not parentNode.isScheduled():
+#             if childNode.isScheduled():
+#                 newLFT = round(childNode.getEST() - float(parent.getDataSize()) / Constants.BANDWIDTH)
+#             else:
+#                 newLFT = round(childNode.getLST() - float(parent.getDataSize()) / Constants.BANDWIDTH)
+#
+#             if parentNode.getLFT() > newLFT:
+#                 parentNode.setLFT(newLFT)
+#                 parentNode.setLST(int(newLFT - round(parentNode.getRunTime())))
+#                 updateParentsLFT(parentNode, env)
+
+
 class CloudAcoResourceInstance:
     def __init__(self, resource, id=None):
         self.__PERIOD_DURATION = 3600
@@ -38,7 +75,7 @@ class CloudAcoResourceInstance:
     def getBandwidthDuration(self, node):
         duration = 0
         for parent in node.getParents():
-            if not parent.getId() in self.__processedTasksIds:
+            if not parent.getId() in self.__processedTasksIds:  # this is always empty check it !
                 tt = float(parent.getDataSize()) / (Constants.BANDWIDTH * 1.0)
                 if tt > duration:
                     duration = tt
@@ -52,24 +89,34 @@ class CloudAcoResourceInstance:
     def getInstanceRemainingTime(self, time):
         return max(self.__instanceFinishTime - time, 0)
 
+    def getNewStartTime(self, node, env):
+        max_AFT = 0
+        for parent in node.getParents():
+            parentNode = env.getProblemGraph().getGraph().getNodes().get(parent.getId())
+            if parentNode.getAFT() >= max_AFT:
+                max_AFT = parentNode.getAFT()  # + self.getBandwidthDuration(node)
+        return max_AFT
+
     def getInstanceReleaseTime(self):
         return self.__currentStartTime + self.__currentTaskDuration
 
-    def setCurrentTask(self, cloudAcoProblemNode):
+    def setCurrentTask(self, cloudAcoProblemNode, env):
         node = cloudAcoProblemNode.getNode()
-        if str(node.getId()).lower() == "start":
+        if str(node.getId()).lower() == "start" or str(
+                node.getId()).lower() == "end":  # i personally think that end is missing here becouse like start end is not allowed to be set !
             return
 
         newTaskDuration = self.getTaskDuration(node)
         countOfHoursToProvision = max(
-            int(ceil((newTaskDuration - self.getInstanceRemainingTime(node.getEST())) / (self.__PERIOD_DURATION * 1.0))),
+            int(ceil(
+                (newTaskDuration - self.getInstanceRemainingTime(node.getEST())) / (self.__PERIOD_DURATION * 1.0))),
             0)
         addedTimeToProvision = (countOfHoursToProvision * self.__PERIOD_DURATION)
 
         if self.__currentTask is None:
             self.__instanceStartTime = node.getEST()
             self.__instanceFinishTime = addedTimeToProvision
-            self.__currentStartTime = node.getEST()
+            self.__currentStartTime = max(self.getNewStartTime(node, env), node.getEST())
             self.__currentTaskDuration = newTaskDuration
             self.__currentTask = node
             self.__totalCost += countOfHoursToProvision * self.__resource.getCost()
@@ -78,13 +125,18 @@ class CloudAcoResourceInstance:
             countOfHoursToProvision = max(int(round((newTaskDuration - remain) / float(self.__PERIOD_DURATION))), 0)
             addedTimeToProvision = (countOfHoursToProvision * self.__PERIOD_DURATION)
             self.__instanceFinishTime += addedTimeToProvision
-            self.__currentStartTime = max(int(self.getInstanceReleaseTime()), node.getEST())
+            self.__currentStartTime = max(self.getNewStartTime(node, env), node.getEST())
+            # self.__currentStartTime = max(int(self.getInstanceReleaseTime()), node.getEST())  # for id05  is (15, 21)
             self.__currentTaskDuration = newTaskDuration
             self.__currentTask = node
             self.__totalCost += countOfHoursToProvision * self.__resource.getCost()
         node.setAST(int(round(self.__currentStartTime)))
         node.setAFT(int(round(self.__currentStartTime + self.__currentTaskDuration)))
         node.setRunTime(newTaskDuration)
+        # testing for AST check of children !
+        # updateChildrenEST(node, env)
+        # updateParentsLFT(node, env)
+
         node.setScheduled()
         self.__processedTasks.put(node)
 
@@ -95,7 +147,7 @@ class CloudAcoResourceInstance:
         newTaskDuration = self.getTaskDuration(node)
         countOfHoursToProvision = int(ceil(newTaskDuration / float(self.__PERIOD_DURATION)))
 
-        if countOfHoursToProvision == 0:    # we don't need this becouse it's alwayes 1 at Least
+        if countOfHoursToProvision == 0:  # we don't need this becouse it's alwayes 1 at Least
             countOfHoursToProvision = 1
         # not started yet!
         if self.__currentTask is None:
