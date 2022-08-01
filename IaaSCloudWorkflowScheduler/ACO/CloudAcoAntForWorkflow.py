@@ -323,7 +323,7 @@ class CloudAcoAntForWorkflow(Ant):
             self.setCurrentIndex(self.getCurrentIndex() + 1)
 
     def setUnvisited(self):
-        self.__environment.getProblemGraph().resetNodes()
+        self.__environment.getProblemGraph().resetNodes()   # check
         self.__currentNode.setUnvisited()
         self.__currentNode = self.__environment.getProblemGraph().getStartNode()
         self.getVisited().clear()

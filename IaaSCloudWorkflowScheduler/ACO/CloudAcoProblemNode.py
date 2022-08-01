@@ -1,4 +1,5 @@
 import sys
+import copy
 
 sys.path.append('/Users/apple/Desktop/Create WS-ACO/MyCode')
 
@@ -16,7 +17,7 @@ class CloudAcoProblemNode:
             self.setByRW = None
             self.__node = node
             # self.__defaultNode = WorkflowNode(node)
-            self.__defaultNode = node
+            self.__defaultNode = copy.deepcopy(node)
             self.__resource = resource
             self.__visited = False
             self.__id = id
@@ -39,11 +40,11 @@ class CloudAcoProblemNode:
     def resetNode(self):
         self.__node.setRunTime(self.__defaultNode.getRunTime())
         self.__node.setAFT(self.__defaultNode.getAFT())
-        self.__node.setAST(self.__defaultNode.getAST())
-        self.__node.setEST(self.__defaultNode.getEST())
-        self.__node.setEFT(self.__defaultNode.getEFT())
-        self.__node.setLFT(self.__defaultNode.getLFT())
-        self.__node.setLST(self.__defaultNode.getLST())
+        self.__node.setAST(0)
+        # self.__node.setEST(self.__defaultNode.getEST())
+        # self.__node.setEFT(self.__defaultNode.getEFT())
+        # self.__node.setLFT(self.__defaultNode.getLFT())
+        # self.__node.setLST(self.__defaultNode.getLST())
         self.__node.setUnscheduled()
         self.setUnvisited()
 
