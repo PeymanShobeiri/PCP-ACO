@@ -7,7 +7,7 @@ from ..WorkflowNode import WorkflowNode
 from ..Resource import Resource
 from IaaSCloudWorkflowScheduler.ACO.CloudAcoResourceInstance import CloudAcoResourceInstance
 
-import warnings
+# import warnings
 
 
 class CloudAcoProblemNode:
@@ -60,7 +60,7 @@ class CloudAcoProblemNode:
     def isVisited(self):
         return self.__visited
 
-    def _setVisited(self):
+    def setVisited2(self):
         self.getNode().setScheduled()
         self.__visited = True
 
@@ -76,7 +76,7 @@ class CloudAcoProblemNode:
         problemNodes = environment.getProblemGraph().getProblemNodeList()
         for node in problemNodes:
             if node.getNode().getId() == self.getNode().getId():
-                node._setVisited()
+                node.setVisited2()
                 count += 1
             if count >= mxitr:
                 break
@@ -87,7 +87,7 @@ class CloudAcoProblemNode:
     def setId(self, id):
         self.__id = id
 
-    warnings.filterwarnings("ignore")
+    # warnings.filterwarnings("ignore")
     '''
     Getting the neighbor of every node.
     In this method we check the possible movement for ant.'''

@@ -130,12 +130,12 @@ class CloudAcoResourceInstance:
             self.__currentTaskDuration = newTaskDuration
             self.__currentTask = node
             self.__totalCost += countOfHoursToProvision * self.__resource.getCost()
+
         node.setAST(int(round(self.__currentStartTime)))
         node.setAFT(int(round(self.__currentStartTime + newTaskDuration)))
+
+        # node.setSelectedResource(cloudAcoProblemNode.getResource())
         node.setRunTime(newTaskDuration)
-        # testing for AST check of children !
-        # updateChildrenEST(node, env)
-        # updateParentsLFT(node, env)
 
         node.setScheduled()
         self.__processedTasks.put(node)

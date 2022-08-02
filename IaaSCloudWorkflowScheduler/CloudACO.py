@@ -9,10 +9,9 @@ from .ACO.CloudAcoProblemNode import CloudAcoProblemNode
 import copy
 
 
-
 class CloudACO:
 
-    def __init__(self):
+    def __init__(self, sol_size):
         self.__H_RATIO = 0.6
         self.__P_RATIO = 0.4
         self.__EVAP_RATIO = 0.1
@@ -23,7 +22,7 @@ class CloudACO:
         self.__heuristic = []
         self.__probability = []
         self.__colony = []
-        self.__bestAnt = None
+        self.__bestAnt = self.Ant(size=sol_size)
         self.__environment = None
         self.__heuristicCache = dict()
 
@@ -268,15 +267,39 @@ class CloudACO:
                 # if currentAnt.makeSpan > deadline:
                 #     continue
 
-                if self.__bestAnt is None and currentAnt.makeSpan <= deadline:
-                    self.__bestAnt = currentAnt
-                    self.__bestAnt.saveSolution()
-                    self.__bestAnt.saveSolution2()
+                if self.__bestAnt.id is None and currentAnt.makeSpan <= deadline:
+                    # self.__bestAnt = currentAnt
+
+                    # self.__bestAnt = copy.deepcopy(currentAnt)
+
+                    self.__bestAnt.solutionCost = currentAnt.solutionCost
+                    self.__bestAnt.id = currentAnt.id
+
+                    for s in range(len(currentAnt.solution)):
+                        self.__bestAnt.solution[s].setNode(copy.deepcopy(currentAnt.solution[s].getNode()))
+                        self.__bestAnt.solution[s].h = currentAnt.solution[s].h
+                        self.__bestAnt.solution[s].setResource(currentAnt.solution[s].getResource())
+                        self.__bestAnt.solution[s].setByRW = currentAnt.solution[s].setByRW
+                        self.__bestAnt.solution[s].setId(currentAnt.solution[s].getId())
+
+                    # self.__bestAnt.saveSolution()
+                    # self.__bestAnt.saveSolution2()
                     print("best ant: " + str(self.__bestAnt.solutionCost))
                 elif currentAnt.solutionCost <= self.__bestAnt.solutionCost and currentAnt.makeSpan <= deadline:
-                    self.__bestAnt = currentAnt
-                    self.__bestAnt.saveSolution()
-                    self.__bestAnt.saveSolution2()
+                    # self.__bestAnt = currentAnt
+
+                    self.__bestAnt.solutionCost = currentAnt.solutionCost
+                    self.__bestAnt.id = currentAnt.id
+
+                    for s in range(len(currentAnt.solution)):
+                        self.__bestAnt.solution[s].setNode(copy.deepcopy(currentAnt.solution[s].getNode()))
+                        self.__bestAnt.solution[s].h = currentAnt.solution[s].h
+                        self.__bestAnt.solution[s].setResource(currentAnt.solution[s].getResource())
+                        self.__bestAnt.solution[s].setByRW = currentAnt.solution[s].setByRW
+                        self.__bestAnt.solution[s].setId(currentAnt.solution[s].getId())
+
+                    # self.__bestAnt.saveSolution()
+                    # self.__bestAnt.saveSolution2()
                     print("best ant: " + str(self.__bestAnt.solutionCost))
 
                 # self.__colony[antNum] = copy.deepcopy(currentAnt)
@@ -286,8 +309,7 @@ class CloudACO:
                 antNum += 1
 
             self.updatePheromone()
-            self.__bestAnt.saveSolution()
-            self.__bestAnt.saveSolution2()
+            # self.__bestAnt.saveSolution.
             itr += 1
 
         print("best ant best: " + str(self.__bestAnt.solutionCost))
@@ -295,8 +317,7 @@ class CloudACO:
         self.__bestAnt.saveSolution2()
 
     class Ant:
-        def __init__(self, id=None, size=None):
-
+        def __init__(self, id=None, size=0):
 
             self.isCompleted = False
             self.id = id

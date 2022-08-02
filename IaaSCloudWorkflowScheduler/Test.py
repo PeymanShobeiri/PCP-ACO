@@ -105,7 +105,7 @@ class test:
                 print("=================================MY_ACO")
                 problemRepresentation = CloudAcoProblemRepresentation(wb.graph, wb.resources, Constants.BANDWIDTH, deadline, 6)
                 environment = CloudAcoEnvironment(problemGraph=problemRepresentation)
-                cloudACO = CloudACO()
+                cloudACO = CloudACO(len(environment.getProblemGraph().getGraph().getNodes()))
                 cloudACO.schedule(environment, deadline)
                 print("==================================MY_ACO")
                 return
