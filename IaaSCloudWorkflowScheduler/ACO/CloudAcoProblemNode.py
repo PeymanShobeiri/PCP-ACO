@@ -3,8 +3,8 @@ import copy
 
 sys.path.append('/Users/apple/Desktop/Create WS-ACO/MyCode')
 
-from ..WorkflowNode import WorkflowNode
-from ..Resource import Resource
+from IaaSCloudWorkflowScheduler.WorkflowNode import WorkflowNode
+from IaaSCloudWorkflowScheduler.Resource import Resource
 from IaaSCloudWorkflowScheduler.ACO.CloudAcoResourceInstance import CloudAcoResourceInstance
 
 # import warnings

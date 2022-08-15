@@ -1,43 +1,6 @@
 from math import ceil
 from queue import Queue
-from ..Constants import Constants
-
-
-# from ..PcpD2Policy2 import PcpD2Policy2
-
-#
-# def updateChildrenEST(parentNode, env):
-#     for child in parentNode.getChildren():
-#         childNode = env.getProblemGraph().getGraph().getNodes().get(child.getId())
-#         newEST = None
-#
-#         if not childNode.isScheduled():
-#             if parentNode.isScheduled():
-#                 newEST = parentNode.getDeadline() + round(float(child.getDataSize() / Constants.BANDWIDTH))
-#             else:
-#                 newEST = parentNode.getEFT() + round(float(child.getDataSize()) / Constants.BANDWIDTH)
-#
-#             if childNode.getEST() < newEST:
-#                 childNode.setEST(newEST)
-#                 childNode.setEFT(int(newEST + round(childNode.getRunTime())))
-#                 updateChildrenEST(childNode, env)
-#
-#
-# def updateParentsLFT(childNode, env):
-#     for parent in childNode.getParents():
-#         parentNode = env.getProblemGraph().getGraph().getNodes().get(parent.getId())
-#         newLFT = None
-#
-#         if not parentNode.isScheduled():
-#             if childNode.isScheduled():
-#                 newLFT = round(childNode.getEST() - float(parent.getDataSize()) / Constants.BANDWIDTH)
-#             else:
-#                 newLFT = round(childNode.getLST() - float(parent.getDataSize()) / Constants.BANDWIDTH)
-#
-#             if parentNode.getLFT() > newLFT:
-#                 parentNode.setLFT(newLFT)
-#                 parentNode.setLST(int(newLFT - round(parentNode.getRunTime())))
-#                 updateParentsLFT(parentNode, env)
+from IaaSCloudWorkflowScheduler.Constants import Constants
 
 
 class CloudAcoResourceInstance:
@@ -47,9 +10,9 @@ class CloudAcoResourceInstance:
         self.__resource = resource
         self.__currentTask = None
         self.__currentTaskDuration = 0
-        self.__processedTasks = Queue()
+        self.__processedTasks = []
         self.__processedTasksIds = set()
-        self.__currentStartTime = 0  # none or 0 ??
+        self.__currentStartTime = 0
         self.__instanceFinishTime = 0.0
         self.__totalCost = 0
         self.__instanceStartTime = None
@@ -138,7 +101,7 @@ class CloudAcoResourceInstance:
         node.setRunTime(newTaskDuration)
 
         node.setScheduled()
-        self.__processedTasks.put(node)
+        self.__processedTasks.append(node)
 
     def getTotalCost(self):
         return self.__totalCost
@@ -166,7 +129,7 @@ class CloudAcoResourceInstance:
         self.__currentTask = None
         self.__currentTaskDuration = 0
         self.__instanceFinishTime = 0
-        self.__processedTasks = Queue()
+        self.__processedTasks = []
         self.__currentStartTime = 0
         self.__processedTasksIds.clear()
 

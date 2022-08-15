@@ -92,6 +92,7 @@ class PcpD2Policy2(WorkflowPolicy):
                     float(self.getDataSize(path[i - 1], curNode)) / self._bandwidth)
                 if newEST > curNode.getEST():
                     curNode.setEST(newEST)
+                    curNode.setEFT(newEST + curNode.getRunTime())
             i += 1
 
     def updateChildrenEST(self, parentNode):

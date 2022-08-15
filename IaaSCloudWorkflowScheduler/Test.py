@@ -106,7 +106,7 @@ class test:
                 MAX_Parallel = wb.getPolicy().FindMaxParallel()
                 problemRepresentation = CloudAcoProblemRepresentation(wb.graph, wb.resources, Constants.BANDWIDTH, deadline, MAX_Parallel)
                 environment = CloudAcoEnvironment(problemGraph=problemRepresentation)
-                cloudACO = CloudACO(len(environment.getProblemGraph().getGraph().getNodes()))
+                cloudACO = CloudACO(environment.getProblemGraph().getGraphSize())
                 cloudACO.schedule(environment, deadline)
                 print("==================================MY_ACO")
                 return
