@@ -170,22 +170,26 @@ class CloudACO:
         node = None
         i = 0
 
-        # y = np.cumsum(probabilities)
-        # ss = np.argmax(y >= value)
-        # return candidates[ss]
+        if candidates[0].getNode().getId() == 'end':
+            return candidates[0]
 
-        while i < len(candidates) and total < value:
-            node = candidates[i]
-            probability = probabilities[i]
-            if probability is None:
-                raise RuntimeError("The probability for component " + node + " is not a number.")
+        y = np.cumsum(probabilities)
+        ss = np.argmax(y >= value)
+        candidates[ss].setByRW = True
+        return candidates[ss]
 
-            total += probability
-            i += 1
+        # while i < len(candidates) and total < value:
+        #     node = candidates[i]
+        #     probability = probabilities[i]
+        #     if probability is None:
+        #         raise RuntimeError("The probability for component " + node + " is not a number.")
+        #
+        #     total += probability
+        #     i += 1
 
-        node.setByRW = True
+        # node.setByRW = True
 
-        return node
+        # return node
 
     def getSolutionCost(self):
         tmp = self.__environment.getProblemGraph().getInstanceSet().getInstances()
@@ -269,12 +273,10 @@ class CloudACO:
 
                 if self.__bestAnt.id is None and currentAnt.makeSpan <= deadline:
                     # self.__bestAnt = currentAnt
-
                     # self.__bestAnt = copy.deepcopy(currentAnt)
 
                     self.__bestAnt.solutionCost = currentAnt.solutionCost
                     self.__bestAnt.id = currentAnt.id
-
                     for s in range(len(currentAnt.solution)):
                         self.__bestAnt.solution[s].setNode(copy.deepcopy(currentAnt.solution[s].getNode()))
                         self.__bestAnt.solution[s].h = currentAnt.solution[s].h
@@ -285,12 +287,12 @@ class CloudACO:
                     # self.__bestAnt.saveSolution()
                     # self.__bestAnt.saveSolution2()
                     print("best ant: " + str(self.__bestAnt.solutionCost))
+
                 elif currentAnt.solutionCost <= self.__bestAnt.solutionCost and currentAnt.makeSpan <= deadline:
                     # self.__bestAnt = currentAnt
 
                     self.__bestAnt.solutionCost = currentAnt.solutionCost
                     self.__bestAnt.id = currentAnt.id
-
                     for s in range(len(currentAnt.solution)):
                         self.__bestAnt.solution[s].setNode(copy.deepcopy(currentAnt.solution[s].getNode()))
                         self.__bestAnt.solution[s].h = currentAnt.solution[s].h

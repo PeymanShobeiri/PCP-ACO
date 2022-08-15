@@ -2,7 +2,7 @@ from InstanceSet import InstanceSet
 import sys
 from queue import Queue
 from WorkflowNode import WorkflowNode
-from math import ceil,floor
+from math import ceil, floor
 import zope.interface
 import matplotlib.pyplot as plt
 
@@ -69,12 +69,23 @@ class WorkflowPolicy(object):
         for node in nodes.values():
             node.setUnscheduled()
 
+    def FindMaxParallel(self):
+        nodes = self._graph.getNodes()
+        levels = dict()
+        for node in nodes.values():
+            if node.getDAG_level() not in levels:
+                levels[node.getDAG_level()] = 1
+            else:
+                levels[node.getDAG_level()] += 1
+        return int((max(levels.values())/3) * 2)
+
     def computeESTandEFT(self, startTime):
         candidateNodes = Queue()
         nodes = self._graph.getNodes()
         curNode = None
         parentNode = None
         childNode = None
+        level = 1
 
         ############ testing for none + int error
         for node in nodes.values():
@@ -83,9 +94,11 @@ class WorkflowPolicy(object):
         curNode = nodes.get(self._graph.getStartId())
         curNode.setEST(startTime)
         curNode.setEFT(startTime)
+        curNode.setDAG_level(0)
         curNode.setScheduled()
         for child in curNode.getChildren():
             candidateNodes.put(child.getId())
+            nodes[child.getId()].setDAG_level(level)
 
         while not candidateNodes.empty():  # maxtime and thistime needed to be decleard here ?
             thisTime = 0.0
@@ -113,6 +126,7 @@ class WorkflowPolicy(object):
                         isCandidate = False
                 if isCandidate:
                     candidateNodes.put(child.getId())
+                    nodes[child.getId()].setDAG_level(curNode.getDAG_level() + 1)
 
         for node in nodes.values():
             node.setUnscheduled()

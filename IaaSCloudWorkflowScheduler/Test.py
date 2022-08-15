@@ -65,7 +65,7 @@ class test:
         alpha = 1.5
         while alpha <= 5:
             deadline = ceil(alpha * MH)
-            # deadline = 71
+            # deadline = 1000
             try:
                 wb = WorkflowBroker(workflowPath, ScheduleType.IC_PCPD2)
             except Exception as e:
@@ -103,7 +103,8 @@ class test:
                 # wb.getPolicy().setEndNodeEST()
 
                 print("=================================MY_ACO")
-                problemRepresentation = CloudAcoProblemRepresentation(wb.graph, wb.resources, Constants.BANDWIDTH, deadline, 6)
+                MAX_Parallel = wb.getPolicy().FindMaxParallel()
+                problemRepresentation = CloudAcoProblemRepresentation(wb.graph, wb.resources, Constants.BANDWIDTH, deadline, MAX_Parallel)
                 environment = CloudAcoEnvironment(problemGraph=problemRepresentation)
                 cloudACO = CloudACO(len(environment.getProblemGraph().getGraph().getNodes()))
                 cloudACO.schedule(environment, deadline)

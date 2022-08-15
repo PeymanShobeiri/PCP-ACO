@@ -13,6 +13,7 @@ class WorkflowNode:
             self.instructionSize = 0  # this is in MI units
             self.runTime = rt
             self.topologicaSortCount = 0
+            self.DAG_level = 0
             self.numPE = None
             self.parents = []  # both LINK type
             self.children = []
@@ -36,6 +37,7 @@ class WorkflowNode:
             self.outputFileSize = nodeId.outputFileSize
             self.runTime = nodeId.runTime
             self.topologicaSortCount = 0
+            self.DAG_level = nodeId.getDAG_level()
             self.numPE = None
             self.instructionSize = nodeId.instructionSize
             self.scheduled = nodeId.scheduled
@@ -58,6 +60,12 @@ class WorkflowNode:
 
     def getTopologicaSortCount(self):
         return self.topologicaSortCount
+
+    def getDAG_level(self):
+        return self.DAG_level
+
+    def setDAG_level(self, n):
+        self.DAG_level = n
 
     def setTopologicaSortCount(self, topologicaSortCount):
         self.topologicaSortCount = topologicaSortCount

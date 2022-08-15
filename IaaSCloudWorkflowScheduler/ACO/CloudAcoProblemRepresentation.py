@@ -9,6 +9,7 @@ import warnings
 
 import sys
 
+
 #
 # class AtomicInteger():
 #     def __init__(self, value=0):
@@ -87,8 +88,8 @@ class CloudAcoProblemRepresentation:
                 # maxi = 0
                 i = 0
                 while i < len(self.queue) - 1:
-                    if self.compare(self.queue[i], self.queue[i+1]) == 1:
-                        self.queue[i], self.queue[i+1] = self.queue[i+1], self.queue[i]
+                    if self.compare(self.queue[i], self.queue[i + 1]) == 1:
+                        self.queue[i], self.queue[i + 1] = self.queue[i + 1], self.queue[i]
                     i += 1
                 item = self.queue.pop(0)
                 # del self.queue[maxi]
@@ -225,12 +226,12 @@ class CloudAcoProblemRepresentation:
         self.START_NODE_PHEROMONE = 0.0001
         self.__graph = graph
         self.__resourceSet = resourceSet
-        self.__instanceSet = CloudAcoResourceInstanceSet(resourceSet, instanceCount)    # create a maxpaller * resource_type instance
+        self.__instanceSet = CloudAcoResourceInstanceSet(resourceSet, instanceCount)  # create a maxpaller * resource_type instance
         self.__bandwidth = bandwidth
         self.__deadline = deadline
         self.__start = None
         self.__end = None
-        self.__sortedWorkflowNodes = self.topologicalSort()         # topology sort of nodes whiich comes first on the table
+        self.__sortedWorkflowNodes = self.topologicalSort()  # topology sort of nodes which comes first on the table
         self.__problemNodeList = self.createProblemNodeList(self.__graph, self.__instanceSet)
         self.__neighbours = self.calculateConstantNeighbours()
         self.__lacoSortedWorkflowNodes = []
