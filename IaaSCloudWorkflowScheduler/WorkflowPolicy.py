@@ -50,7 +50,7 @@ class WorkflowPolicy(object):
                 # thisTime = round((childNode.getLFT() - childNode.getRunTime()) - float(child.getDataSize() / self._bandwidth))
 
                 thisTime = childNode.getLFT() - childNode.getRunTime()
-                thisTime -= floor(float(child.getDataSize() / self._bandwidth))
+                thisTime -= round(float(child.getDataSize() / self._bandwidth))
                 if thisTime < minTime:
                     minTime = thisTime
 

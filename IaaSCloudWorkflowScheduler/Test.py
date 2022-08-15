@@ -12,7 +12,7 @@ from IaaSCloudWorkflowScheduler.CloudACO import CloudACO
 from OtherCloudWorkflowScheduler.methods.Scheduler import Scheduler
 from math import ceil
 import time
-
+import matplotlib.pyplot as plt
 
 class test:
 
@@ -63,9 +63,12 @@ class test:
         MC = self.computeCheapest(workflowPath, startTime, deadline)
 
         alpha = 1.5
+        x = []
+        y = []
+        y2 = []
         while alpha <= 5:
             deadline = ceil(alpha * MH)
-            # deadline = 1000
+
             try:
                 wb = WorkflowBroker(workflowPath, ScheduleType.IC_PCPD2)
             except Exception as e:
@@ -85,6 +88,7 @@ class test:
                       "solution: \n"
 
             # wb.getPolicy().savesss()
+            y2.append(cost)
             wb.getPolicy().solutionAsString()
             print(message)
 
@@ -107,15 +111,20 @@ class test:
                 problemRepresentation = CloudAcoProblemRepresentation(wb.graph, wb.resources, Constants.BANDWIDTH, deadline, MAX_Parallel)
                 environment = CloudAcoEnvironment(problemGraph=problemRepresentation)
                 cloudACO = CloudACO(environment.getProblemGraph().getGraphSize())
-                cloudACO.schedule(environment, deadline)
+                OptimalCost = cloudACO.schedule(environment, deadline)
+                x.append(alpha)
+                y.append(OptimalCost)
                 print("==================================MY_ACO")
-                return
             except Exception as e:
                 print("EEEEEException" + str(e))
                 print(e)
-                return
-
             alpha += 1.0
+        plt.plot(x, y)
+        plt.plot(x, y2)
+        plt.xlabel('Deadline Factor')
+        plt.ylabel('Normalized Cost')
+        plt.title('My ACO')
+        plt.show()
 
     def printWorkflow(self, g):
         pass

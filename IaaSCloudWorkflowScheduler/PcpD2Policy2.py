@@ -117,10 +117,10 @@ class PcpD2Policy2(WorkflowPolicy):
             newLFT = None
 
             if not parentNode.isScheduled():
-                if childNode.isScheduled():
-                    newLFT = round(childNode.getEST() - float(parent.getDataSize()) / self._bandwidth)
-                else:
-                    newLFT = round(childNode.getLST() - float(parent.getDataSize()) / self._bandwidth)
+                # if childNode.isScheduled():
+                #     newLFT = round(childNode.getEST() - float(parent.getDataSize()) / self._bandwidth)
+                # else:
+                newLFT = round(childNode.getLST() - float(parent.getDataSize()) / self._bandwidth)
 
                 if parentNode.getLFT() > newLFT:
                     parentNode.setLFT(newLFT)
@@ -136,8 +136,8 @@ class PcpD2Policy2(WorkflowPolicy):
 
         self.assignPath(criticalPath)
         for i in range(len(criticalPath)):
-            self.updateChildrenEST(criticalPath[i])
-            self.updateParentsLFT(criticalPath[i])
+            # self.updateChildrenEST(criticalPath[i])
+            # self.updateParentsLFT(criticalPath[i])
             self.assignParents(criticalPath[i])
 
         # for i in range(len(criticalPath)):
