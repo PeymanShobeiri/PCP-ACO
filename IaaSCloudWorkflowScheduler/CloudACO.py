@@ -13,21 +13,22 @@ import concurrent.futures
 
 lock = Lock()
 lock2 = Lock()
-
+globalAnt = None
 
 class CloudACO:
 
     def __init__(self, sol_size):
         self.__H_RATIO = 0.6
         self.__P_RATIO = 0.4
-        self.__EVAP_RATIO = 0.05
+        self.__EVAP_RATIO = 0.1
         self.__Q0 = 0.9
-        self.__iterCount = 100
-        self.__antCount = 30
+        self.__iterCount = 200
+        self.__antCount = 20
         self.__pheromone = None
         self.__heuristic = []
         self.__probability = []
         self.__colony = []
+        self.globalant = None
         self.__bestAnt = self.Ant(size=sol_size)
         self.__environment = None
         self.__heuristicCache = dict()
@@ -38,7 +39,7 @@ class CloudACO:
     def initPheromone(self, size):
         self.__heuristic = np.zeros(size)
         self.__probability = np.zeros(size)
-        self.__pheromone = np.full((size, size), 0.000011)
+        self.__pheromone = np.full((size, size), 1)
 
     def initColony(self, antCount, graphSize):
         start = self.__environment.getProblemGraph().getStart()
@@ -202,12 +203,13 @@ class CloudACO:
         self.__pheromone[self.__pheromone > 1] = 1
         self.__pheromone[self.__pheromone < 0.2] = 0.2
 
-    def move(self, currentAnt):
+    def move(self, antNum):
+        # with lock:
+        currentAnt = self.__colony[antNum]
+        currentAnt.currentNode = self.workflow.getStart()
+        currentAnt.currentPosition = 0
+        currentAnt.currentNode.setVisited(self.__environment)
         with lock:
-            # currentAnt = self.__colony[antNum]
-            currentAnt.currentNode = self.workflow.getStart()
-            currentAnt.currentPosition = 0
-            currentAnt.currentNode.setVisited(self.__environment)
             while not currentAnt.isCompleted:
                 candidateNodes = currentAnt.currentNode.getNeighbourhood(self.__environment)
                 bestOptionByHeuristic = self.calculateHeuristic(candidateNodes, currentAnt.currentPosition)
@@ -227,22 +229,25 @@ class CloudACO:
             currentAnt.makeSpan = end.getNode().getAFT()
 
             currentAnt.solutionCost = self.getSolutionCost()
-
+            # print("CA : " + str(currentAnt.solutionCost) + " MS : " + str(currentAnt.makeSpan))
+            # currentAnt.saveSolution()
+            # currentAnt.saveSolution2()
             if self.__bestAnt.id is None and currentAnt.makeSpan <= self.deadline:
                 self.__bestAnt = copy.deepcopy(currentAnt)
                 # self.__bestAnt.saveSolution()
                 print("best ant: " + str(self.__bestAnt.solutionCost))
-            elif currentAnt.solutionCost <= self.__bestAnt.solutionCost and currentAnt.makeSpan <= self.deadline:
+            elif currentAnt.solutionCost < self.__bestAnt.solutionCost and currentAnt.makeSpan <= self.deadline:
                 self.__bestAnt = copy.deepcopy(currentAnt)
                 # self.__bestAnt.saveSolution()
                 # self.__bestAnt.saveSolution2()
                 print("best ant: " + str(self.__bestAnt.solutionCost))
-
             # self.updatePheromone()
+
             self.__environment.getProblemGraph().getInstanceSet().resetPerAnt()
             self.__environment.getProblemGraph().resetNodes()
 
     def schedule(self, environment, deadline):
+        global globalAnt
         workflow = environment.getProblemGraph()
         self.workflow = environment.getProblemGraph()
         self.deadline = deadline
@@ -256,17 +261,34 @@ class CloudACO:
             dest = None
             antNum = 0
 
-            with ThreadPoolExecutor(max_workers=self.__antCount) as executer:
-                executer.map(self.move, self.__colony)
+            threads = []
+            for x in range(self.__antCount):
+                y = (x,)
+                t = Thread(target=self.move, args=y)
+                t.start()
+                threads.append(t)
+
+            for thr in threads:
+                thr.join()
+
+            # with ThreadPoolExecutor(max_workers=self.__antCount) as executer:
+            #     res = executer.map(self.move, self.__colony)
+            #
+            # print(list(res))
 
             self.updatePheromone()
+            if globalAnt is None:
+                globalAnt = copy.deepcopy(self.__bestAnt)
+            elif globalAnt.solutionCost > self.__bestAnt.solutionCost:
+                globalAnt = copy.deepcopy(self.__bestAnt)
             # self.__bestAnt.saveSolution.
+            self.__bestAnt = self.Ant(size=environment.getProblemGraph().getGraphSize())
             itr += 1
 
-        print("best ant best: " + str(self.__bestAnt.solutionCost))
-        self.__bestAnt.saveSolution()
-        self.__bestAnt.saveSolution2()
-        return self.__bestAnt.solutionCost
+        print("best ant best: " + str(globalAnt.solutionCost))
+        globalant.saveSolution()
+        globalAnt.saveSolution2()
+        return globalAnt.solutionCost
 
     class Ant:
         def __init__(self, id=None, size=0):
