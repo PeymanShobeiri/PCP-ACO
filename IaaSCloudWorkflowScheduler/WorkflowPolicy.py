@@ -199,49 +199,6 @@ class WorkflowPolicy(object):
         nodes.get(self._graph.getStartId()).setScheduled()
         nodes.get(self._graph.getEndId()).setScheduled()
 
-    def savesss(self):
-        headersList = ["N", "R", "EST", "EFT", "R-cost", "runtime", "SD", "LST", "LFT"]
-
-        rowsList = []
-        for node in self._graph.nodes.values():
-            if node is None:
-                continue
-
-            runtime = (str(node.getRunTime()))
-            temp = []
-            temp.append(str(node.getId()))
-            temp.append(str(node.getSelectedResource()))
-            # temp.append(str(node.getResource().getInstanceId()))
-            temp.append(str(node.getEST()))
-            temp.append(str(node.getEFT()))
-            temp.append(self._resources.getResource(node.getSelectedResource()).getCost())
-            # temp.append(str(node.getAST()))
-            temp.append(str(runtime)[0:min(4, len(str(runtime)))])
-            # temp.append(str(node.getAFT()))
-            temp.append(str(node.getDeadline()))
-            temp.append(str(node.getLST()))
-            temp.append(str(node.getLFT()))
-            # temp.append(str(node.getResource().getInstanceStartTime()))
-            # temp.append(str(node.h)[0:min(4, len(str(node.h)))])
-
-            rowsList.append(temp)
-
-        val2 = [i for i in range(len(rowsList))]
-        fig, ax = plt.subplots()
-        ax.set_axis_off()
-        table = ax.table(
-            cellText=rowsList,
-            rowLabels=val2,
-            colLabels=headersList,
-            rowColours=["skyblue"] * len(rowsList),
-            colColours=["skyblue"] * 12,
-            cellLoc='center',
-            loc='upper right')
-
-        # table.set_fontsize(24)
-        table.scale(1, 1.5)
-        plt.show()
-
     def solutionAsString(self):  # check this please !!
         headersList = ["N", "R", "EST", "runtime", "EFT", "DeadLine", "cost"]
         rowsList = []

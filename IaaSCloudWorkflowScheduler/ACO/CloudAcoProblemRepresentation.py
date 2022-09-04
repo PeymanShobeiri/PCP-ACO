@@ -119,16 +119,19 @@ class CloudAcoProblemRepresentation:
         return nodesPriorityQueue.remove()
 
     def topologicalSort(self):
-        nodesPriorityQueue = self.PriorityQueue(self.__graph)
-        workflowNodes = []
-        curNode = self.__graph.getNodes().get("start")
-        workflowNodes.append(curNode)
-
-        i = 1
-        while i < self.getGraph().getNodeNum():
-            curNode = self.selectNextTopoNode(curNode, nodesPriorityQueue, workflowNodes)
-            workflowNodes.append(curNode)
-            i += 1
+        self.computeUpRank()
+        workflowNodes = sorted(self.__graph.getNodes().values(), key=lambda item: item.getUpRank(), reverse=True)
+        # workflowNodes.remove()
+        # nodesPriorityQueue = self.PriorityQueue(self.__graph)
+        #
+        # curNode = self.__graph.getNodes().get("start")
+        # workflowNodes.append(curNode)
+        #
+        # i = 1
+        # while i < self.getGraph().getNodeNum():
+        #     curNode = self.selectNextTopoNode(curNode, nodesPriorityQueue, workflowNodes)
+        #     workflowNodes.append(curNode)
+        #     i += 1
 
         return workflowNodes
 
@@ -161,6 +164,9 @@ class CloudAcoProblemRepresentation:
             maxMIPS = self.__resourceSet.getMeanMIPS()
             maxTime += round(float(curNode.getInstructionSize() / maxMIPS))
 
+            if curNode.getId() == "start":
+                maxTime += 1
+
             curNode.setUpRank(maxTime)
             curNode.setScheduled()
 
@@ -176,7 +182,7 @@ class CloudAcoProblemRepresentation:
         for node in nodes.values():
             node.setUnscheduled()
 
-    warnings.filterwarnings("ignore")
+    # warnings.filterwarnings("ignore")
 
     def createProblemNodeList(self, graph, resourceSet):
         # id = AtomicInteger()
@@ -189,7 +195,7 @@ class CloudAcoProblemRepresentation:
         r = self.result()
         bestFinish = sys.maxsize
 
-        self.computeUpRank()
+        # self.computeUpRank()
 
         for curNode in self.__sortedWorkflowNodes:
             curNode.setUnscheduled()

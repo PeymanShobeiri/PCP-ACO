@@ -58,7 +58,7 @@ class CloudAcoResourceInstance:
         for parent in node.getParents():
             parentNode = env.getProblemGraph().getGraph().getNodes().get(parent.getId())
             if parentNode.getAFT() >= max_AFT:
-                max_AFT = parentNode.getAFT()  # + self.getBandwidthDuration(node)
+                max_AFT = parentNode.getAFT() # + self.getBandwidthDuration(node)
         return max_AFT
 
     def getInstanceReleaseTime(self):

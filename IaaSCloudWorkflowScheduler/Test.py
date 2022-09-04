@@ -13,7 +13,7 @@ from OtherCloudWorkflowScheduler.methods.Scheduler import Scheduler
 from math import ceil
 import time
 import matplotlib.pyplot as plt
-import traceback
+
 
 class test:
 
@@ -88,7 +88,6 @@ class test:
                       "\t\tcost of icpc: " + str(cost) + "\n" + \
                       "solution: \n"
 
-            # wb.getPolicy().savesss()
             y2.append(cost)
             wb.getPolicy().solutionAsString()
             print(message)
@@ -118,7 +117,6 @@ class test:
                 print("==================================MY_ACO")
             except Exception as e:
                 print("EEEEEException" + str(e))
-                traceback.print_exc()
                 print(e)
             alpha += 1.0
         plt.plot(x, y)

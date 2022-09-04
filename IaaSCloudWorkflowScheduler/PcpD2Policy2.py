@@ -87,45 +87,45 @@ class PcpD2Policy2(WorkflowPolicy):
             curNode.setDeadline(subDeadline)
             curNode.setScheduled()
 
-            if i > 0:
-                newEST = path[i - 1].getDeadline() + round(
-                    float(self.getDataSize(path[i - 1], curNode)) / self._bandwidth)
-                if newEST > curNode.getEST():
-                    curNode.setEST(newEST)
-                    curNode.setEFT(newEST + curNode.getRunTime())
+            # if i > 0:
+            #     newEST = path[i - 1].getDeadline() + round(
+            #         float(self.getDataSize(path[i - 1], curNode)) / self._bandwidth)
+            #     if newEST > curNode.getEST():
+            #         curNode.setEST(newEST)
+            #         curNode.setEFT(newEST + curNode.getRunTime())
             i += 1
 
-    def updateChildrenEST(self, parentNode):
-        for child in parentNode.getChildren():
-            childNode = self._graph.getNodes().get(child.getId())
-            newEST = None
+    # def updateChildrenEST(self, parentNode):
+    #     for child in parentNode.getChildren():
+    #         childNode = self._graph.getNodes().get(child.getId())
+    #         newEST = None
+    #
+    #         if not childNode.isScheduled():
+    #             if parentNode.isScheduled():
+    #                 newEST = parentNode.getDeadline() + round(float(child.getDataSize() / self._bandwidth))
+    #             else:
+    #                 newEST = parentNode.getEFT() + round(float(child.getDataSize()) / self._bandwidth)
+    #
+    #             if childNode.getEST() < newEST:
+    #                 childNode.setEST(newEST)
+    #                 childNode.setEFT(int(newEST + round(childNode.getRunTime())))
+    #                 self.updateChildrenEST(childNode)
 
-            if not childNode.isScheduled():
-                if parentNode.isScheduled():
-                    newEST = parentNode.getDeadline() + round(float(child.getDataSize() / self._bandwidth))
-                else:
-                    newEST = parentNode.getEFT() + round(float(child.getDataSize()) / self._bandwidth)
-
-                if childNode.getEST() < newEST:
-                    childNode.setEST(newEST)
-                    childNode.setEFT(int(newEST + round(childNode.getRunTime())))
-                    self.updateChildrenEST(childNode)
-
-    def updateParentsLFT(self, childNode):
-        for parent in childNode.getParents():
-            parentNode = self._graph.getNodes().get(parent.getId())
-            newLFT = None
-
-            if not parentNode.isScheduled():
-                # if childNode.isScheduled():
-                #     newLFT = round(childNode.getEST() - float(parent.getDataSize()) / self._bandwidth)
-                # else:
-                newLFT = round(childNode.getLST() - float(parent.getDataSize()) / self._bandwidth)
-
-                if parentNode.getLFT() > newLFT:
-                    parentNode.setLFT(newLFT)
-                    parentNode.setLST(int(newLFT - round(parentNode.getRunTime())))
-                    self.updateParentsLFT(parentNode)
+    # def updateParentsLFT(self, childNode):
+    #     for parent in childNode.getParents():
+    #         parentNode = self._graph.getNodes().get(parent.getId())
+    #         newLFT = None
+    #
+    #         if not parentNode.isScheduled():
+    #             # if childNode.isScheduled():
+    #             #     newLFT = round(childNode.getEST() - float(parent.getDataSize()) / self._bandwidth)
+    #             # else:
+    #             newLFT = round(childNode.getLST() - float(parent.getDataSize()) / self._bandwidth)
+    #
+    #             if parentNode.getLFT() > newLFT:
+    #                 parentNode.setLFT(newLFT)
+    #                 parentNode.setLST(int(newLFT - round(parentNode.getRunTime())))
+    #                 self.updateParentsLFT(parentNode)
 
     def assignParents(self, curNode):
         criticalPath = []
