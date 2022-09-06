@@ -15,23 +15,24 @@ import concurrent.futures
 
 lock = Lock()
 lock2 = Lock()
+globalAnt = None
 
 
 class CloudACO:
 
     def __init__(self, sol_size):
-        self.__H_RATIO = 2
+        self.__H_RATIO = 0.6
         self.__P_RATIO = 1
         self.__EVAP_RATIO = 0.05
-        self.__Q0 = 0.88
-        self.__iterCount = 100
-        self.__antCount = 30
+        self.__Q0 = 0.9
+        self.__iterCount = 300
+        self.__antCount = 20
         self.__pheromone = None
         self.__heuristic = []
         self.__probability = []
         self.__colony = []
         self.__bestAnt = self.Ant(size=sol_size)
-        self.__globalant = None
+        # self.__globalant = None
         self.__environment = None
         self.__heuristicCache = {}
         # testing ...
@@ -44,7 +45,7 @@ class CloudACO:
             env.getProblemGraph().getGraph().getMaxParallel()) + 5
         self.__heuristic = np.zeros(instance_NO)
         self.__probability = np.zeros(instance_NO)
-        self.__pheromone = np.full((instance_NO, instance_NO), 1)
+        self.__pheromone = np.full((instance_NO, instance_NO), 0.04)
 
     def initColony(self, antCount, graphSize):
         start = self.__environment.getProblemGraph().getStart()
@@ -74,7 +75,7 @@ class CloudACO:
                         0)
         currentFT = currentST + currentDuration
 
-        hc = self.HeuristicCondition(currentDuration, curCost, currentST, destination.getResource().getId())
+        hc = self.HeuristicCondition(currentDuration, curCost, currentST, destination.getResource().getId(), task.getDeadline())
 
         if not str(task.getId()).lower() == "end" and not str(
                 task.getId()).lower() == "start":
@@ -93,7 +94,7 @@ class CloudACO:
             h1 = 1
         else:
             h1 = max(0, (((task.getLFT() - currentFT) + 1) / (
-                    (task.getLFT() - task.getDeadline()) + 1 * 1.0)))
+                    (task.getLFT() - task.getDeadline()) + 1)))
             bad = True
 
         maxCost = -1
@@ -119,22 +120,24 @@ class CloudACO:
                     fastest = tempDuration
 
         h3 = (slowest - currentDuration + 1) / (slowest - fastest + 1)
-        # h3 = 1 / (curCost+1)
+
         h2 = ((maxCost - curCost + 1) / (maxCost - minCost + 1))
-        p1 = 5
-        p2 = 5
-        p3 = 5
-        ratio = p1 + p2 + p3
-        if positionInSolution < self.__environment.getProblemGraph().getGraphSize() / 3:
-            p1 = 11
-            p2 = 2
-            p3 = 2
-        elif positionInSolution > (2 * (self.__environment.getProblemGraph().getGraphSize() / 3)):
+        # h3 = (h2 + h1) / ((task.getUpRank() + 1) + h3)
+        # h3 = (self.__environment.getProblemGraph().getGraphSize() - destination.getPTI())/self.__environment.getProblemGraph().getGraphSize()
+        p1 = 2
+        p2 = 11
+        p3 = 2
+        ratio = p1 + p2  # + p3
+        if positionInSolution <= self.__environment.getProblemGraph().getGraphSize() / 3:
             p1 = 2
             p2 = 11
             p3 = 2
+        elif positionInSolution > (2 * (self.__environment.getProblemGraph().getGraphSize() / 3)):
+            p1 = 11
+            p2 = 2
+            p3 = 2
 
-        result = ((h1 * p1) + (h2 * p2) + (h3 * p3)) / ratio
+        result = ((h1 * p1) + (h2 * p2)) / ratio
 
         if bad:
             result = result ** 2
@@ -206,11 +209,11 @@ class CloudACO:
                 self.__pheromone[bestAnt.solution[i].getSelectedInstance()][bestAnt.solution[i+1].getSelectedInstance()] += value
                 i += 1
 
-    def updatePheromone(self):
+    def updatePheromone(self, ant):
         self.__pheromone = self.__pheromone * (1 - self.__EVAP_RATIO)
 
-        if self.__bestAnt is not None:
-            self.releasePheromone(self.__bestAnt)
+        # if self.__bestAnt is not None:
+        self.releasePheromone(ant)
 
         self.__pheromone[self.__pheromone > 1] = 1
         self.__pheromone[self.__pheromone < 0.2] = 0.2
@@ -247,19 +250,22 @@ class CloudACO:
         if self.__bestAnt.id is None and currentAnt.makeSpan <= self.deadline:
             self.__bestAnt = copy.deepcopy(currentAnt)
             # self.__bestAnt.saveSolution()
-            print("best ant: " + str(self.__bestAnt.solutionCost))
+            # print("best ant: " + str(self.__bestAnt.solutionCost))
 
         elif currentAnt.solutionCost < self.__bestAnt.solutionCost and currentAnt.makeSpan <= self.deadline:
             self.__bestAnt = copy.deepcopy(currentAnt)
             # self.__bestAnt.saveSolution()
             # self.__bestAnt.saveSolution2()
-            print("best ant: " + str(self.__bestAnt.solutionCost))
+            # print("best ant: " + str(self.__bestAnt.solutionCost))
 
+        self.updatePheromone(currentAnt)
         self.__environment.getProblemGraph().getInstanceSet().resetPerAnt()
         self.__environment.getProblemGraph().resetProblemNodeList()
         self.__environment.getProblemGraph().resetNodes()
 
     def schedule(self, environment, deadline):
+        global globalAnt
+        globalAnt = None
         workflow = environment.getProblemGraph()
         self.workflow = environment.getProblemGraph()
         self.deadline = deadline
@@ -285,25 +291,25 @@ class CloudACO:
             # for thr in threads:
             #     thr.join()
 
-            self.updatePheromone()
+            # self.updatePheromone(self.__bestAnt)
 
-            # if self.__globalant is None:
-            #     self.__globalant = copy.deepcopy(self.__bestAnt)
-            #     print("first xxx is  :   " + str(self.__globalant.solutionCost))
-            # elif self.__globalant.solutionCost > self.__bestAnt.solutionCost:
-            #     self.__globalant = copy.deepcopy(self.__bestAnt)
-            #     print("gloooooooooooballlllllllllllll is  :   " + str(self.__globalant.solutionCost))
-            #
-            # self.__bestAnt.solutionCost = 0
-            # self.__bestAnt.makeSpan = 0
-            # self.__bestAnt.id = None
+            if globalAnt is None:
+                globalAnt = copy.deepcopy(self.__bestAnt)
+                print("first xxx is  :   " + str(globalAnt.solutionCost))
+            elif globalAnt.solutionCost > self.__bestAnt.solutionCost and self.__bestAnt.makeSpan != 0:
+                globalAnt = copy.deepcopy(self.__bestAnt)
+                print("gloooooooooooballlllllllllllll is  :   " + str(globalAnt.solutionCost))
+
+            self.updatePheromone(globalAnt)
+
+            self.__bestAnt = self.Ant(size=environment.getProblemGraph().getGraphSize())
 
             itr += 1
 
-        print("best ant best: " + str(self.__bestAnt.solutionCost))
-        self.__bestAnt.saveSolution()
+        print("best ant best: " + str(globalAnt.solutionCost))
+        globalAnt.saveSolution()
         # self.__globalant.saveSolution2()
-        return self.__bestAnt.solutionCost
+        return globalAnt.solutionCost
 
     class Ant:
         def __init__(self, id=None, size=0):
@@ -312,7 +318,7 @@ class CloudACO:
             self.id = id
             self.solution = []
             for _ in range(size):
-                self.solution.append(CloudAcoProblemNode())
+                self.solution.append(None)
             self.solutionString = ""
             self.solutionCost = 0.0
             self.makeSpan = 0.0
@@ -350,47 +356,15 @@ class CloudACO:
                                  str(node.getRunTime()), str(node.getAFT()), str(node.getDeadline()),
                                  str(node.getLFT()), str(node.getSelectedResource().getInstanceStartTime())])
             print(myTable)
-
-            # temp = []
-            # temp.append(str(node.getId()))
-            # temp.append(str(node.getSelectedResource().getId()))
-            # temp.append(str(node.getSelectedResource().getInstanceId()))
-            # temp.append(str(node.getSelectedResource().getTotalCost()))
-            # temp.append(str(node.getSelectedResource().getResource().getCost()))
-            # temp.append(str(node.getAST()))
-            # temp.append(str(node.getRunTime()))
-            # temp.append(str(node.getAFT()))
-            # temp.append(str(node.getDeadline()))
-            # temp.append(str(node.getLFT()))
-            # temp.append(str(node.getSelectedResource().getInstanceStartTime()))
-            # # temp.append(str(node.h)[0:min(4, len(str(node.h)))])
-            #
-            # rowsList.append(temp)
-
-            # val2 = [i for i in range(len(rowsList))]
-            # fig, ax = plt.subplots()
-            # ax.set_axis_off()
-            # table = ax.table(
-            #     cellText=rowsList,
-            #     rowLabels=val2,
-            #     colLabels=headersList,
-            #     rowColours=["skyblue"] * len(rowsList),
-            #     colColours=["skyblue"] * 12,
-            #     cellLoc='center',
-            #     loc='upper right')
-            #
-            # ax.set_title('id {}'.format(self.id),
-            #              fontweight="bold")
-            # # table.set_fontsize(24)
-            # table.scale(1, 1.5)
-            # plt.show()
+            print("cost is : " + str(self.solutionCost))
 
     class HeuristicCondition(object):
-        def __init__(self, curDuration, curCost, curStartTime, instanceId):
+        def __init__(self, curDuration, curCost, curStartTime, instanceId, sd):
             self.__curDuration = curDuration
             self.__curCost = curCost
             self.__curStartTime = curStartTime
             self.__instanceId = instanceId
+            self.__sd = sd
 
         def getCurDuration(self):
             return self.__curDuration
@@ -417,7 +391,7 @@ class CloudACO:
                 return False
 
         def __key(self):
-            return (self.__curCost, self.__curDuration, self.__curStartTime, self.__instanceId)
+            return (self.__curCost, self.__curDuration, self.__curStartTime, self.__instanceId, self.__sd)
 
         def __hash__(self):
             return hash(self.__key())

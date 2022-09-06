@@ -71,27 +71,28 @@ class test:
         while alpha <= 5:
             deadline = ceil(alpha * MH)
 
-            # try:
-            #     wb = WorkflowBroker(workflowPath, ScheduleType.IC_PCPD2)
-            # except Exception as e:
-            #     print("Error ?!!" + '  ' + str(e))
-            #
-            # realStartTime = round(time.time() * 1000)
-            # cost = wb.schedule(startTime, deadline)
-            # realFinishTime = round(time.time() * 1000)
-            # realFinishTime -= realStartTime
-            # finishTime = wb.graph.getNodes()[wb.graph.getEndId()].getEST()
-            # message = "\n\nICPC finishT < deadline: " + \
-            #           str((finishTime < deadline)) + \
-            #           "\n" + "deadline : " + str(deadline) + \
-            #           "\t\tcost of icpc: " + str(cost) + "\n" + \
-            #           "solution: \n"
-            #
-            # y2.append(cost)
-            # wb.getPolicy().solutionAsString()
-            # print(message)
+            try:
+                wb = WorkflowBroker(workflowPath, ScheduleType.IC_PCPD2)
+            except Exception as e:
+                print("Error ?!!" + '  ' + str(e))
+
+            realStartTime = round(time.time() * 1000)
+            cost = wb.schedule(startTime, deadline)
+            realFinishTime = round(time.time() * 1000)
+            realFinishTime -= realStartTime
+            finishTime = wb.graph.getNodes()[wb.graph.getEndId()].getEST()
+            message = "\n\nICPC finishT < deadline: " + \
+                      str((finishTime < deadline)) + \
+                      "\n" + "deadline : " + str(deadline) + \
+                      "\t\tcost of icpc: " + str(cost) + "\n" + \
+                      "solution: \n"
+
+            y2.append(cost)
+            wb.getPolicy().solutionAsString()
+            print(message)
             summ = 0
             for xxx in range(20):
+                print("evaloation itr : " + str(xxx))
                 try:
                     wb = WorkflowBroker(workflowPath, ScheduleType.IC_PCPD2_2)
                     wb.getPolicy().computeESTandEFT(startTime)
@@ -121,7 +122,7 @@ class test:
                     print("EEEEEException" + str(e))
                     traceback.print_exc()
                     print(e)
-
+                return
             print("average : " + str(summ/20))
             return
             alpha += 1.0

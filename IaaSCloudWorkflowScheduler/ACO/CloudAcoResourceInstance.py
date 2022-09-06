@@ -6,7 +6,7 @@ from IaaSCloudWorkflowScheduler.Constants import Constants
 
 class CloudAcoResourceInstance:
     def __init__(self, resource, id=None):
-        self.__PERIOD_DURATION = 3600
+        self.__PERIOD_DURATION = 300
         self.__instanceId = id
         self.__resource = resource
         self.__currentTask = None
@@ -17,6 +17,9 @@ class CloudAcoResourceInstance:
         self.__instanceFinishTime = 0.0
         self.__totalCost = 0
         self.__instanceStartTime = None
+
+    def getPTI(self):
+        return len(self.__processedTasksIds)
 
     def getResource(self):
         return self.__resource
