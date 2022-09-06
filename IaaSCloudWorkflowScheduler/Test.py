@@ -77,8 +77,6 @@ class test:
 
             realStartTime = round(time.time() * 1000)
             cost = wb.schedule(startTime, deadline)
-            # wb.getPolicy().computeESTandEFT(startTime)
-            # wb.getPolicy().computeLSTandLFT(deadline)
             realFinishTime = round(time.time() * 1000)
             realFinishTime -= realStartTime
             finishTime = wb.graph.getNodes()[wb.graph.getEndId()].getEST()

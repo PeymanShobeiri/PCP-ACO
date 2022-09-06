@@ -2,6 +2,7 @@ import random
 import sys
 from threading import Thread, Lock
 import matplotlib.pyplot as plt
+from Constants import Constants
 import numpy as np
 from concurrent.futures import ThreadPoolExecutor
 from ACO.CloudAcoResourceInstance import CloudAcoResourceInstance
@@ -22,7 +23,7 @@ class CloudACO:
         self.__P_RATIO = 0.4
         self.__EVAP_RATIO = 0.05
         self.__Q0 = 0.88
-        self.__iterCount = 150
+        self.__iterCount = 200
         self.__antCount = 20
         self.__pheromone = None
         self.__heuristic = []
@@ -50,12 +51,16 @@ class CloudACO:
             ant.solution[0] = start
             self.__colony[k] = ant
 
+    def getBandwidthDuration(self, node, parent):
+        duration = float(parent.getDataSize()) / (Constants.BANDWIDTH * 1.0)
+        return round(duration)
+
     def getNewStartTime(self, node):
         max_AFT = 0
         for parent in node.getParents():
             parentNode = self.__environment.getProblemGraph().getGraph().getNodes().get(parent.getId())
-            if parentNode.getAFT() >= max_AFT:
-                max_AFT = parentNode.getAFT()  # + self.getBandwidthDuration(node)
+            if parentNode.getAFT() + self.getBandwidthDuration(node, parent) >= max_AFT:
+                max_AFT = parentNode.getAFT() + self.getBandwidthDuration(node, parent)
         return max_AFT
 
     def getHeuristicValue(self, destination, positionInSolution):
@@ -209,7 +214,7 @@ class CloudACO:
         currentAnt = self.__colony[antNum]
         currentAnt.currentNode = self.workflow.getStart()
         currentAnt.currentPosition = 0
-        currentAnt.currentNode.setVisited(self.__environment)
+        # currentAnt.currentNode.setVisited(self.__environment)
         with lock:
             while not currentAnt.isCompleted:
                 candidateNodes = currentAnt.currentNode.getNeighbourhood(self.__environment)
@@ -222,7 +227,7 @@ class CloudACO:
                     dest = self.rwsSelection(candidateNodes, self.__probability)
 
                 # currentAnt.currentNode.setVisited(self.__environment)
-                dest.setVisited(self.__environment)
+                # dest.setVisited(self.__environment)
                 dest.getResource().setCurrentTask(dest, self.__environment)
                 currentAnt.setDest(dest)
 
@@ -235,7 +240,7 @@ class CloudACO:
                 self.__bestAnt = copy.deepcopy(currentAnt)
                 # self.__bestAnt.saveSolution()
                 print("best ant: " + str(self.__bestAnt.solutionCost))
-            elif currentAnt.solutionCost <= self.__bestAnt.solutionCost and currentAnt.makeSpan <= self.deadline:
+            elif currentAnt.solutionCost < self.__bestAnt.solutionCost and currentAnt.makeSpan <= self.deadline:
                 self.__bestAnt = copy.deepcopy(currentAnt)
                 # self.__bestAnt.saveSolution()
                 # self.__bestAnt.saveSolution2()

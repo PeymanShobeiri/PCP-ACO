@@ -39,7 +39,7 @@ class CloudAcoResourceInstance:
     def getBandwidthDuration(self, node):
         duration = 0
         for parent in node.getParents():
-            if not parent.getId() in self.__processedTasksIds:  # this is always empty check it !
+            if not parent.getId() in self.__processedTasksIds:
                 tt = float(parent.getDataSize()) / (Constants.BANDWIDTH * 1.0)
                 if tt > duration:
                     duration = tt
@@ -58,8 +58,8 @@ class CloudAcoResourceInstance:
         for parent in node.getParents():
             parentNode = env.getProblemGraph().getGraph().getNodes().get(parent.getId())
             if parentNode.getAFT() >= max_AFT:
-                max_AFT = parentNode.getAFT() # + self.getBandwidthDuration(node)
-        return max_AFT
+                max_AFT = parentNode.getAFT() + self.getBandwidthDuration(node)
+        return round(max_AFT)
 
     def getInstanceReleaseTime(self):
         return self.__currentStartTime + self.__currentTaskDuration
@@ -103,6 +103,7 @@ class CloudAcoResourceInstance:
 
         node.setScheduled()
         self.__processedTasks.append(node)
+        self.__processedTasksIds.add(node.getId())
 
     def getTotalCost(self):
         return self.__totalCost
