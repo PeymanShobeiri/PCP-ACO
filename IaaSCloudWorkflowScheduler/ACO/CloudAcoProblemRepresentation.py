@@ -6,34 +6,8 @@ from IaaSCloudWorkflowScheduler.ACO.CloudAcoResourceInstanceSet import CloudAcoR
 
 from queue import Queue
 import warnings
-
+import copy
 import sys
-
-
-#
-# class AtomicInteger():
-#     def __init__(self, value=0):
-#         self._value = int(value)
-#         self._lock = threading.Lock()
-#
-#     def inc(self, d=1):
-#         with self._lock:
-#             self._value += int(d)
-#             return self._value
-#
-#     def dec(self, d=1):
-#         return self.inc(-d)
-#
-#     @property
-#     def value(self):
-#         with self._lock:
-#             return self._value
-#
-#     @value.setter
-#     def value(self, v):
-#         with self._lock:
-#             self._value = int(v)
-#             return self._value
 
 
 class CloudAcoProblemRepresentation:
@@ -185,32 +159,24 @@ class CloudAcoProblemRepresentation:
     # warnings.filterwarnings("ignore")
 
     def createProblemNodeList(self, graph, resourceSet):
-        # id = AtomicInteger()
-        id = 0
         problemNodeList = []
-        numbersOfTasks = graph.getNodeNum()
+        mId = 0
 
-        nodes = graph.getNodes()
-        queue = self.PriorityQueue(graph)
-        r = self.result()
-        bestFinish = sys.maxsize
-
-        # self.computeUpRank()
+        for instances in self.__instanceSet.getInstances().values():
+            for instance in instances:
+                problemNodeList.append(instance)
 
         for curNode in self.__sortedWorkflowNodes:
-            curNode.setUnscheduled()
-            for instances in self.__instanceSet.getInstances().values():
-                if curNode.getId() == "start":
-                    self.__start = CloudAcoProblemNode(curNode, instances[0], id)
-                    problemNodeList.append(self.__start)
-                elif curNode.getId() == "end":
-                    self.__end = CloudAcoProblemNode(curNode, instances[0], id)
-                    problemNodeList.append(self.__end)
-                else:
-                    for instance in instances:
-                        node = CloudAcoProblemNode(curNode, instance, id)
-                        id += 1
-                        problemNodeList.append(node)
+            if curNode.getId() == "start":
+                curNode.setMatrixId(0)
+                curNode.setSelectedResource(problemNodeList[len(problemNodeList)-1])
+
+            elif curNode.getId() == "end":
+                curNode.setMatrixId(mId)
+                curNode.setSelectedResource(problemNodeList[len(problemNodeList)-1])
+            else:
+                curNode.setMatrixId(mId)
+                mId += 1
 
         return problemNodeList
 
@@ -239,15 +205,22 @@ class CloudAcoProblemRepresentation:
         self.__end = None
         self.__sortedWorkflowNodes = self.topologicalSort()  # topology sort of nodes which comes first on the table
         self.__problemNodeList = self.createProblemNodeList(self.__graph, self.__instanceSet)
-        self.__neighbours = self.calculateConstantNeighbours()
-        self.__lacoSortedWorkflowNodes = []
+        self.__defultNodes = copy.deepcopy(self.__graph.getNodes())
+        # self.__neighbours = self.calculateConstantNeighbours()
+        # self.__lacoSortedWorkflowNodes = []
+
+    def getInstanceSet(self):
+        return self.__instanceSet
+
+    def getResourceSet(self):
+        return self.__resourceSet
 
     def resetNodes(self):
-        for node in self.__problemNodeList:
-            node.resetNode()
+        for node in self.__graph.getNodes().values():
+            node = self.__defultNodes[node.getId()]
 
     def getNeighbours(self, node):
-        return self.__neighbours.get(self.__sortedWorkflowNodes[self.__sortedWorkflowNodes.index(node) + 1])
+        return self.__sortedWorkflowNodes[self.__sortedWorkflowNodes.index(node) + 1]
 
     def getGraphSize(self):
         return self.__graph.getNodeNum()
@@ -258,20 +231,20 @@ class CloudAcoProblemRepresentation:
     def getProblemNodeList(self):
         return self.__problemNodeList
 
+    def resetProblemNodeList(self):
+        self.__problemNodeList = self.createProblemNodeList(self.__graph, self.__instanceSet)
+
     def getBandwidth(self):
         return self.__bandwidth
-
-    def getInstanceSet(self):
-        return self.__instanceSet
 
     def getDeadline(self):
         return self.__deadline
 
-    def lacoSort(self, sortedTaskIds):
-        self.__lacoSortedWorkflowNodes = self.__sortedWorkflowNodes
-        # sorted(self.__lacoSortedWorkflowNodes , key = lambda task : sortedTaskIds.index(task.getId()))
-        self.__lacoSortedWorkflowNodes.sort(key=lambda task: sortedTaskIds.index(task.getId()))
-        self.__sortedWorkflowNodes = self.__lacoSortedWorkflowNodes
+    # def lacoSort(self, sortedTaskIds):
+    #     self.__lacoSortedWorkflowNodes = self.__sortedWorkflowNodes
+    #     # sorted(self.__lacoSortedWorkflowNodes , key = lambda task : sortedTaskIds.index(task.getId()))
+    #     self.__lacoSortedWorkflowNodes.sort(key=lambda task: sortedTaskIds.index(task.getId()))
+    #     self.__sortedWorkflowNodes = self.__lacoSortedWorkflowNodes
 
     def getStart(self):
         return self.__start

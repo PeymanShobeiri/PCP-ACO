@@ -141,6 +141,7 @@ class PcpD2Policy(WorkflowPolicy):
 
     def distributeDeadline(self):
         self.assignParents(self._graph.getNodes().get(self._graph.getEndId()))
+        # self._graph.getNodes().get(self._graph.getEndId()).setDeadline(0)
         for node in self._graph.getNodes().values():
             node.setUnscheduled()
 
@@ -197,7 +198,7 @@ class PcpD2Policy(WorkflowPolicy):
         r = self.result()
         curFinish = int(curStart + ceil(float(curNode.getInstructionSize()) / curInst.getType().getMIPS()))
         r.finishTime = curFinish
-        if (finishTime != 0 and curStart > curIntervalFinish) or curFinish > curNode.getDeadline():
+        if (finishTime != 0 and curStart > curIntervalFinish) or (curFinish > curNode.getDeadline()):
             r.cost = sys.maxsize
         else:
             r.cost = float(ceil(float(curFinish - startTime) / float(interval)) * curInst.getType().getCost() - curCost)

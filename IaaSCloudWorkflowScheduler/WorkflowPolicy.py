@@ -77,7 +77,7 @@ class WorkflowPolicy(object):
                 levels[node.getDAG_level()] = 1
             else:
                 levels[node.getDAG_level()] += 1
-        return int((max(levels.values())/3) * 2)
+        return int((max(levels.values())))
 
     def computeESTandEFT(self, startTime):
         candidateNodes = Queue()

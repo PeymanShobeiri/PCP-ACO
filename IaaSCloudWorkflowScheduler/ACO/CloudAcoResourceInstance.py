@@ -64,8 +64,8 @@ class CloudAcoResourceInstance:
     def getInstanceReleaseTime(self):
         return self.__currentStartTime + self.__currentTaskDuration
 
-    def setCurrentTask(self, cloudAcoProblemNode, env):
-        node = cloudAcoProblemNode.getNode()
+    def setCurrentTask(self, cloudAcoProblemNode, env, curt):
+        node = curt
         if str(node.getId()).lower() == "start" or str(
                 node.getId()).lower() == "end":  # i personally think that end is missing here becouse like start end is not allowed to be set !
             return
@@ -84,6 +84,11 @@ class CloudAcoResourceInstance:
             self.__currentTaskDuration = newTaskDuration
             self.__currentTask = node
             self.__totalCost += countOfHoursToProvision * self.__resource.getCost()
+
+            if cloudAcoProblemNode.getInstanceId()+1 != env.getProblemGraph().getGraph().getMaxParallel():
+                tmp = CloudAcoResourceInstance(cloudAcoProblemNode.getResource(), cloudAcoProblemNode.getInstanceId()+1)
+                env.getProblemGraph().getProblemNodeList().append(tmp)
+
         else:
             remain = self.getInstanceRemainingTime(self.getInstanceReleaseTime())
             countOfHoursToProvision = max(int(round((newTaskDuration - remain) / float(self.__PERIOD_DURATION))), 0)
@@ -97,9 +102,10 @@ class CloudAcoResourceInstance:
 
         node.setAST(int(round(self.__currentStartTime)))
         node.setAFT(int(round(self.__currentStartTime + newTaskDuration)))
-
-        # node.setSelectedResource(cloudAcoProblemNode.getResource())
         node.setRunTime(newTaskDuration)
+        node.setSelectedResource(self)
+        node.setSelectedInstance(self.__instanceId)
+        # node.setSelectedResource(self.getId())
 
         node.setScheduled()
         self.__processedTasks.append(node)

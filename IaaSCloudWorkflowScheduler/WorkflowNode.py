@@ -7,6 +7,7 @@ class WorkflowNode:
         # print(type(nodeId))
         if type(nodeId) == str:
             self.id = nodeId
+            self.matrixid = None
             self.name = nodeName
             self.inputFileSize = inSize
             self.outputFileSize = outSize
@@ -29,9 +30,11 @@ class WorkflowNode:
             self.MET = None
             self.upRank = None
             self.subDeadline = None
+            self.selectedInstance = -1
             self.selectedResource = -1
         else:
             self.id = nodeId.id
+            self.matrixid = nodeId.matrixid
             self.name = nodeId.name
             self.inputFileSize = nodeId.inputFileSize
             self.outputFileSize = nodeId.outputFileSize
@@ -50,6 +53,7 @@ class WorkflowNode:
             self.MET = nodeId.MET
             self.upRank = nodeId.upRank
             self.subDeadline = nodeId.subDeadline
+            self.selectedInstance = nodeId.selectedInstance
             self.selectedResource = nodeId.selectedResource
             self.parents = []
             for l in nodeId.parents:
@@ -58,8 +62,23 @@ class WorkflowNode:
             for l in nodeId.children:
                 self.children.append(Link(l.getId(), l.getDataSize()))
 
+    def getMatrixId(self):
+        return self.matrixid
+
+    def setMatrixId(self, id):
+        self.matrixid = id
+
+    def setSelectedInstance(self,ins):
+        self.selectedInstance = ins
+
+    def getSelectedInstance(self):
+        return self.selectedInstance
+
     def getTopologicaSortCount(self):
         return self.topologicaSortCount
+
+    def getNeighbourhood(self, environment):
+        return environment.getProblemGraph().getNeighbours(self)
 
     def getDAG_level(self):
         return self.DAG_level
