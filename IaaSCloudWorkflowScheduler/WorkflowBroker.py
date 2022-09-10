@@ -38,7 +38,7 @@ class WorkflowBroker:
         self.resources.sort()
 
     def __init__(self, wfDescFile, type):
-        self.interval = 3600
+        self.interval = 300
         self.bandwidth = Constants.BANDWIDTH
         self.graph = None
         self.resources = None

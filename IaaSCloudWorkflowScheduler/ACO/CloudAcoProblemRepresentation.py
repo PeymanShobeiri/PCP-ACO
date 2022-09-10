@@ -168,10 +168,12 @@ class CloudAcoProblemRepresentation:
 
         for curNode in self.__sortedWorkflowNodes:
             if curNode.getId() == "start":
+                self.__start = curNode
                 curNode.setMatrixId(0)
                 curNode.setSelectedResource(problemNodeList[len(problemNodeList)-1])
 
             elif curNode.getId() == "end":
+                self.__end = curNode
                 curNode.setMatrixId(mId)
                 curNode.setSelectedResource(problemNodeList[len(problemNodeList)-1])
             else:
@@ -204,7 +206,9 @@ class CloudAcoProblemRepresentation:
         self.__start = None
         self.__end = None
         self.__sortedWorkflowNodes = self.topologicalSort()  # topology sort of nodes which comes first on the table
+        self.__dsortflow = copy.deepcopy(self.__sortedWorkflowNodes)
         self.__problemNodeList = self.createProblemNodeList(self.__graph, self.__instanceSet)
+        # self.__plistback = self.__problemNodeList
         self.__defultNodes = copy.deepcopy(self.__graph.getNodes())
         # self.__neighbours = self.calculateConstantNeighbours()
         # self.__lacoSortedWorkflowNodes = []
@@ -216,8 +220,21 @@ class CloudAcoProblemRepresentation:
         return self.__resourceSet
 
     def resetNodes(self):
-        for node in self.__graph.getNodes().values():
-            node = self.__defultNodes[node.getId()]
+        # self.__graph.setNodes(self.__defultNodes)
+        # self.__sortedWorkflowNodes = self.__dsortflow
+        for node in self.__graph.getNodes().items():
+            curnode = node[1]
+            if curnode.id == "start" or curnode.id == "end":
+                curnode.setSelectedResource(self.__problemNodeList[len(self.__problemNodeList) - 1])
+            else:
+                curnode.selectedResource = -1
+            curnode.selectedInstance = -1
+            curnode.AST = None
+            if curnode.id == "start":
+                curnode.AFT = 0
+            else:
+                curnode.AFT = None
+            # curnode = self.__defultNodes[node[0]]
 
     def getNeighbours(self, node):
         return self.__sortedWorkflowNodes[self.__sortedWorkflowNodes.index(node) + 1]
@@ -232,6 +249,7 @@ class CloudAcoProblemRepresentation:
         return self.__problemNodeList
 
     def resetProblemNodeList(self):
+        # self.__problemNodeList = self.__plistback
         self.__problemNodeList = self.createProblemNodeList(self.__graph, self.__instanceSet)
 
     def getBandwidth(self):

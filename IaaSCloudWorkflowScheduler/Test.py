@@ -47,7 +47,7 @@ class test:
         return MC
 
     def scheduleWorkflow(self):
-        workflowPath = "/Users/apple/Desktop/cloud_aco-develop/src/main/resources/WfDescFiles/Montage_25.xml"
+        workflowPath = "/Users/apple/Desktop/cloud_aco-develop/src/main/resources/WfDescFiles/montage_25.xml"
         startTime = 0
         deadline = 1000
         finishTime = None

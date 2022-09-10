@@ -87,8 +87,14 @@ class CloudAcoResourceInstance:
             self.__currentTaskDuration = newTaskDuration
             self.__currentTask = node
             self.__totalCost += countOfHoursToProvision * self.__resource.getCost()
+            # if cloudAcoProblemNode.getInstanceId() == 192:
+            #     print("first")
+            # if cloudAcoProblemNode.getInstanceId() == 194:
+            #     print("22222")
+            # if cloudAcoProblemNode.getInstanceId() == 196:
+            #     print("333333")
 
-            if cloudAcoProblemNode.getInstanceId()+1 != env.getProblemGraph().getGraph().getMaxParallel():
+            if cloudAcoProblemNode.getInstanceId()+1 != env.getProblemGraph().getGraph().getMaxParallel() and not cloudAcoProblemNode.getInstanceId()+1 >= env.getProblemGraph().getGraph().getMaxParallel() * env.getProblemGraph().getResourceSet().getSize():
                 tmp = CloudAcoResourceInstance(cloudAcoProblemNode.getResource(), cloudAcoProblemNode.getInstanceId()+1)
                 env.getProblemGraph().getProblemNodeList().append(tmp)
 

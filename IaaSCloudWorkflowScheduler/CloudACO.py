@@ -104,6 +104,9 @@ class CloudACO:
         temp = 0.0
         tempDuration = 0.0
 
+        # maxCost = list(self.__environment.getProblemGraph().getInstanceSet().getInstances().items())[0][1][0].getCost(task)
+        # minCost = list(self.__environment.getProblemGraph().getInstanceSet().getInstances().items())[9][1][0].getCost(task)
+
         for entry in self.__environment.getProblemGraph().getInstanceSet().getInstances().items():
             test3 = entry[1]  # test3 is the instance on the each resource
             for instance in test3:
@@ -147,12 +150,15 @@ class CloudACO:
         bestOption = -1
         for i in range(len(candidateNodes)):
             self.__heuristic[i] = self.getHeuristicValue(candidateNodes[i], positionInSolution, curtask)
+            # if positionInSolution == 1 and self.__heuristic[i] == 0.0 and bestOption == 0.0:
+            #     print("help")
             if self.__heuristic[i] >= bestOption:
                 bestOption = self.__heuristic[i]
                 bestOptionIndex = i
 
         # print("sum is : " + str(sum(self.__heuristic)))
         # bestOptionIndex = np.argmax(self.__heuristic)
+
         return bestOptionIndex
 
     def calculateProbability(self, current, candidateNodes):
@@ -215,7 +221,7 @@ class CloudACO:
         # self.__pheromone[self.__pheromone < 0.2] = 0.2
 
     def localUpdate(self):
-        self.__pheromone = (1 - self.__EVAP_RATIO) * self.__pheromone + (self.__EVAP_RATIO * 0.04) + 0.01
+        self.__pheromone = (1 - self.__EVAP_RATIO) * self.__pheromone + (self.__EVAP_RATIO * 0.04) + 0.005   # + 0.02
 
     def move(self, antNum):
         # with lock:
