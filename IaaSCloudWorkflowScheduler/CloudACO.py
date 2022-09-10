@@ -4,14 +4,14 @@ from threading import Thread, Lock
 import matplotlib.pyplot as plt
 from Constants import Constants
 import numpy as np
-from concurrent.futures import ThreadPoolExecutor
 from ACO.CloudAcoResourceInstance import CloudAcoResourceInstance
 from ACO.CloudAcoProblemNode import CloudAcoProblemNode
 import copy
 from prettytable import PrettyTable
-
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 import threading
 import concurrent.futures
+from multiprocessing import Process
 
 lock = Lock()
 lock2 = Lock()
@@ -75,7 +75,8 @@ class CloudACO:
                         0)
         currentFT = currentST + currentDuration
 
-        hc = self.HeuristicCondition(currentDuration, curCost, currentST, destination.getResource().getId(), task.getDeadline())
+        hc = self.HeuristicCondition(currentDuration, curCost, currentST, destination.getResource().getId(),
+                                     task.getDeadline())
 
         if not str(task.getId()).lower() == "end" and not str(
                 task.getId()).lower() == "start":
@@ -145,9 +146,11 @@ class CloudACO:
         self.__heuristicCache[hc] = result
         return result
 
-    def calculateHeuristic(self, candidateNodes, positionInSolution, curtask):
+    def calculateHeuristic(self, current, candidateNodes, positionInSolution, curtask):
         bestOptionIndex = -1
         bestOption = -1
+        best = -1
+        bestIndex = -1
         for i in range(len(candidateNodes)):
             self.__heuristic[i] = self.getHeuristicValue(candidateNodes[i], positionInSolution, curtask)
             # if positionInSolution == 1 and self.__heuristic[i] == 0.0 and bestOption == 0.0:
@@ -155,29 +158,35 @@ class CloudACO:
             if self.__heuristic[i] >= bestOption:
                 bestOption = self.__heuristic[i]
                 bestOptionIndex = i
+            self.__probability[i] = (self.__heuristic[i] ** self.__H_RATIO) * (
+                self.__pheromone[current.currentNode.getSelectedResource().getInstanceId()][
+                    candidateNodes[i].getInstanceId()])
+            if self.__probability[i] >= best:
+                best = self.__probability[i]
+                bestIndex = i
 
         # print("sum is : " + str(sum(self.__heuristic)))
         # bestOptionIndex = np.argmax(self.__heuristic)
 
-        return bestOptionIndex
+        return bestOptionIndex, bestIndex
 
-    def calculateProbability(self, current, candidateNodes):
-        best = -1
-        bestIndex = -1
-        i = 0
-        while i < len(candidateNodes):
-            self.__probability[i] = (self.__heuristic[i] ** self.__H_RATIO) * (
-                    self.__pheromone[current.currentNode.getSelectedResource().getInstanceId()][
-                        candidateNodes[i].getInstanceId()])
-            if self.__probability[i] >= best:
-                best = self.__probability[i]
-                bestIndex = i
-            i += 1
-
-        # self.__probability = self.__probability / sum(self.__probability)
-        # print(self.__probability)
-
-        return bestIndex
+    # def calculateProbability(self, current, candidateNodes):
+    #     best = -1
+    #     bestIndex = -1
+    #     i = 0
+    #     while i < len(candidateNodes):
+    #         self.__probability[i] = (self.__heuristic[i] ** self.__H_RATIO) * (
+    #             self.__pheromone[current.currentNode.getSelectedResource().getInstanceId()][
+    #                 candidateNodes[i].getInstanceId()])
+    #         if self.__probability[i] >= best:
+    #             best = self.__probability[i]
+    #             bestIndex = i
+    #         i += 1
+    #
+    #     # self.__probability = self.__probability / sum(self.__probability)
+    #     # print(self.__probability)
+    #
+    #     return bestIndex
 
     def rwsSelection(self, candidates, probabilities):
         value = random.random()
@@ -208,7 +217,12 @@ class CloudACO:
             value = self.__EVAP_RATIO * (1 / bestAnt.solutionCost) + 0.1
             i = 0
             while i < len(bestAnt.solution) - 1 and not bestAnt.solution[i + 1].getId().lower() == "end":
-                self.__pheromone[bestAnt.solution[i].getSelectedInstance()][bestAnt.solution[i+1].getSelectedInstance()] = (self.__pheromone[bestAnt.solution[i].getSelectedInstance()][bestAnt.solution[i+1].getSelectedInstance()] * (1-self.__EVAP_RATIO)) + value
+                self.__pheromone[bestAnt.solution[i].getSelectedInstance()][
+                    bestAnt.solution[i + 1].getSelectedInstance()] = (self.__pheromone[
+                                                                          bestAnt.solution[i].getSelectedInstance()][
+                                                                          bestAnt.solution[
+                                                                              i + 1].getSelectedInstance()] * (
+                                                                              1 - self.__EVAP_RATIO)) + value
                 i += 1
 
     def updatePheromone(self, ant):
@@ -221,7 +235,7 @@ class CloudACO:
         # self.__pheromone[self.__pheromone < 0.2] = 0.2
 
     def localUpdate(self):
-        self.__pheromone = (1 - self.__EVAP_RATIO) * self.__pheromone + (self.__EVAP_RATIO * 0.04) + 0.005   # + 0.02
+        self.__pheromone = (1 - self.__EVAP_RATIO) * self.__pheromone + (self.__EVAP_RATIO * 0.04) + 0.01  # + 0.02
 
     def move(self, antNum):
         # with lock:
@@ -232,8 +246,10 @@ class CloudACO:
         while not currentAnt.isCompleted:
             curtask = currentAnt.currentNode.getNeighbourhood(self.__environment)
             candidateNodes = self.__environment.getProblemGraph().getProblemNodeList()
-            bestOptionByHeuristic = self.calculateHeuristic(candidateNodes, currentAnt.currentPosition, curtask)
-            bestOptionByProbability = self.calculateProbability(currentAnt, candidateNodes)
+            bestOptionByHeuristic, bestOptionByProbability = self.calculateHeuristic(currentAnt, candidateNodes,
+                                                                                     currentAnt.currentPosition,
+                                                                                     curtask)
+            # bestOptionByProbability = self.calculateProbability(currentAnt, candidateNodes)
 
             if random.random() < self.__Q0:
                 dest = candidateNodes[bestOptionByProbability]
@@ -250,21 +266,22 @@ class CloudACO:
 
         # print("end of ant")
         # print("cA : " + str(currentAnt.solutionCost) + " MK : " + str(currentAnt.makeSpan))
-        if self.__bestAnt.id is None and currentAnt.makeSpan <= self.deadline:
-            self.__bestAnt = copy.deepcopy(currentAnt)
-            # self.__bestAnt.saveSolution()
-            print("best ant: " + str(self.__bestAnt.solutionCost))
+        with lock2:
+            if self.__bestAnt.id is None and currentAnt.makeSpan <= self.deadline:
+                self.__bestAnt = copy.deepcopy(currentAnt)
+                # self.__bestAnt.saveSolution()
+                print("best ant: " + str(self.__bestAnt.solutionCost))
 
-        elif currentAnt.solutionCost < self.__bestAnt.solutionCost and currentAnt.makeSpan <= self.deadline:
-            self.__bestAnt = copy.deepcopy(currentAnt)
-            # self.__bestAnt.saveSolution()
-            # self.__bestAnt.saveSolution2()
-            print("best ant: " + str(self.__bestAnt.solutionCost))
+            elif currentAnt.solutionCost < self.__bestAnt.solutionCost and currentAnt.makeSpan <= self.deadline:
+                self.__bestAnt = copy.deepcopy(currentAnt)
+                # self.__bestAnt.saveSolution()
+                # self.__bestAnt.saveSolution2()
+                print("best ant: " + str(self.__bestAnt.solutionCost))
 
-        # self.updatePheromone(currentAnt)
-        self.__environment.getProblemGraph().getInstanceSet().resetPerAnt()
-        self.__environment.getProblemGraph().resetProblemNodeList()
-        self.__environment.getProblemGraph().resetNodes()
+            # self.updatePheromone(currentAnt)
+            self.__environment.getProblemGraph().getInstanceSet().resetPerAnt()
+            self.__environment.getProblemGraph().resetProblemNodeList()
+            self.__environment.getProblemGraph().resetNodes()
 
     def schedule(self, environment, deadline):
         global globalAnt
@@ -284,6 +301,23 @@ class CloudACO:
 
             for x in range(self.__antCount):
                 self.move(x)
+            # with ThreadPoolExecutor() as executor:
+            #     executor.map(self.move, self.__colony)
+            # print(__name__)
+            # process = []
+            # pp = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+            # for x in range(self.__antCount):
+            #     y = (x,)
+            #     p = Process(target= self.move, args=y)
+            #     p.start()
+            #     process.append(p)
+            #
+            # for ptr in process:
+            #     ptr.join()
+
+            # with ProcessPoolExecutor() as executor:
+            #     executor.map(self.move, [0, 1])
+
             # threads = []
             # for x in range(self.__antCount):
             #     y = (x,)
@@ -296,13 +330,6 @@ class CloudACO:
 
             # self.updatePheromone(self.__bestAnt)
             self.localUpdate()
-
-            # if globalAnt is None:
-            #     globalAnt = copy.deepcopy(self.__bestAnt)
-            #     print("first xxx is  :   " + str(globalAnt.solutionCost))
-            # elif globalAnt.solutionCost > self.__bestAnt.solutionCost and self.__bestAnt.makeSpan != 0:
-            #     globalAnt = copy.deepcopy(self.__bestAnt)
-            #     print("gloooooooooooballlllllllllllll is  :   " + str(globalAnt.solutionCost))
 
             self.updatePheromone(self.__bestAnt)
 

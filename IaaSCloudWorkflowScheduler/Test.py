@@ -47,7 +47,8 @@ class test:
         return MC
 
     def scheduleWorkflow(self):
-        workflowPath = "/Users/apple/Desktop/cloud_aco-develop/src/main/resources/WfDescFiles/montage_25.xml"
+        workflowPath = "/Users/apple/Desktop/cloud_aco-develop/src/main/resources/WfDescFiles/CyberShake_100.xml"
+
         startTime = 0
         deadline = 1000
         finishTime = None
@@ -64,7 +65,7 @@ class test:
         MH = self.computeFastest(workflowPath, startTime, deadline)
         MC = self.computeCheapest(workflowPath, startTime, deadline)
 
-        alpha = 1.5
+        alpha = 3
         x = []
         y = []
         y2 = []
@@ -91,7 +92,7 @@ class test:
             wb.getPolicy().solutionAsString()
             print(message)
             summ = 0
-            for xxx in range(20):
+            for xxx in range(5):
                 print("evaloation itr : " + str(xxx))
                 try:
                     wb = WorkflowBroker(workflowPath, ScheduleType.IC_PCPD2_2)
@@ -110,7 +111,8 @@ class test:
                     print("=================================MY_ACO")
                     MAX_Parallel = wb.getPolicy().FindMaxParallel()
                     wb.getGraph().setMaxParallel(MAX_Parallel)
-                    problemRepresentation = CloudAcoProblemRepresentation(wb.graph, wb.resources, Constants.BANDWIDTH, deadline, MAX_Parallel)
+                    problemRepresentation = CloudAcoProblemRepresentation(wb.graph, wb.resources, Constants.BANDWIDTH,
+                                                                          deadline, MAX_Parallel)
                     environment = CloudAcoEnvironment(problemGraph=problemRepresentation)
                     cloudACO = CloudACO(environment.getProblemGraph().getGraphSize())
                     OptimalCost = cloudACO.schedule(environment, deadline)
@@ -122,8 +124,8 @@ class test:
                     print("EEEEEException" + str(e))
                     traceback.print_exc()
                     print(e)
-                return
-            print("average : " + str(summ/20))
+
+            print("average : " + str(summ / 5))
             return
             alpha += 1.0
         # plt.plot(x, y)
@@ -141,5 +143,6 @@ class test:
         # CloudAcoWorkflow.printSolution()
 
 
-x = test()
-x.main()
+if __name__ == '__main__':
+    x = test()
+    x.main()
