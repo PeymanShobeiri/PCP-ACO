@@ -21,7 +21,7 @@ globalAnt = None
 class CloudACO:
 
     def __init__(self, sol_size):
-        self.__H_RATIO = 0.6
+        self.__H_RATIO = 2
         self.__P_RATIO = 1
         self.__EVAP_RATIO = 0.05
         self.__Q0 = 0.9
@@ -119,29 +119,25 @@ class CloudACO:
                 if tempDuration < fastest:
                     fastest = tempDuration
 
-        h3 = (slowest - currentDuration + 1) / (slowest - fastest + 1)
+        # h3 = (slowest - currentDuration + 1) / (slowest - fastest + 1)
+        # h1 = (max(abs(slowest-task.getDeadline()), abs(task.getDeadline() - fastest)) - abs(currentDuration - task.getDeadline()) + 1) / (max(abs(slowest-task.getDeadline()), abs(task.getDeadline() - fastest)) + 1)
 
         h2 = ((maxCost - curCost + 1) / (maxCost - minCost + 1))
-        # h3 = (h2 + h1) / ((task.getUpRank() + 1) + h3)
-        # h3 = (self.__environment.getProblemGraph().getGraphSize() - destination.getPTI())/self.__environment.getProblemGraph().getGraphSize()
-        p1 = 2
-        p2 = 11
-        p3 = 2
-        ratio = p1 + p2  # + p3
+
+        p1 = 1
+        p2 = 1
+        ratio = p1 + p2
         if positionInSolution <= self.__environment.getProblemGraph().getGraphSize() / 3:
-            p1 = 2
-            p2 = 11
-            p3 = 2
+            p1 = 1
+            p2 = 1
         elif positionInSolution > (2 * (self.__environment.getProblemGraph().getGraphSize() / 3)):
-            p1 = 11
-            p2 = 2
-            p3 = 2
+            p1 = 1
+            p2 = 1
 
         result = ((h1 * p1) + (h2 * p2)) / ratio
 
         if bad:
             result = result ** 2
-            # result = pow(result, 2)
 
         self.__heuristicCache[hc] = result
         return result
@@ -166,13 +162,13 @@ class CloudACO:
         while i < len(candidateNodes):
             self.__probability[i] = (self.__heuristic[i] ** self.__H_RATIO) * (
                     self.__pheromone[current.currentNode.getSelectedResource().getInstanceId()][
-                        candidateNodes[i].getInstanceId()] ** self.__P_RATIO)
+                        candidateNodes[i].getInstanceId()])
             if self.__probability[i] >= best:
                 best = self.__probability[i]
                 bestIndex = i
             i += 1
 
-        self.__probability = self.__probability / sum(self.__probability)
+        # self.__probability = self.__probability / sum(self.__probability)
         # print(self.__probability)
 
         return bestIndex
@@ -203,20 +199,23 @@ class CloudACO:
 
     def releasePheromone(self, bestAnt):
         if bestAnt.solutionCost != 0:
-            value = 1 / bestAnt.solutionCost + 0.5
+            value = self.__EVAP_RATIO * (1 / bestAnt.solutionCost) + 0.1
             i = 0
             while i < len(bestAnt.solution) - 1 and not bestAnt.solution[i + 1].getId().lower() == "end":
-                self.__pheromone[bestAnt.solution[i].getSelectedInstance()][bestAnt.solution[i+1].getSelectedInstance()] += value
+                self.__pheromone[bestAnt.solution[i].getSelectedInstance()][bestAnt.solution[i+1].getSelectedInstance()] = (self.__pheromone[bestAnt.solution[i].getSelectedInstance()][bestAnt.solution[i+1].getSelectedInstance()] * (1-self.__EVAP_RATIO)) + value
                 i += 1
 
     def updatePheromone(self, ant):
-        self.__pheromone = self.__pheromone * (1 - self.__EVAP_RATIO)
+        # self.__pheromone = self.__pheromone * (1 - self.__EVAP_RATIO)
 
         # if self.__bestAnt is not None:
         self.releasePheromone(ant)
 
-        self.__pheromone[self.__pheromone > 1] = 1
-        self.__pheromone[self.__pheromone < 0.2] = 0.2
+        # self.__pheromone[self.__pheromone > 1] = 1
+        # self.__pheromone[self.__pheromone < 0.2] = 0.2
+
+    def localUpdate(self):
+        self.__pheromone = (1 - self.__EVAP_RATIO) * self.__pheromone + (self.__EVAP_RATIO * 0.04) + 0.01
 
     def move(self, antNum):
         # with lock:
@@ -235,8 +234,6 @@ class CloudACO:
             else:
                 dest = self.rwsSelection(candidateNodes, self.__probability)
 
-            # currentAnt.currentNode.setVisited(self.__environment)
-            # dest.setVisited(self.__environment)
             dest.setCurrentTask(dest, self.__environment, curtask)
             currentAnt.setDest(curtask)
 
@@ -250,15 +247,15 @@ class CloudACO:
         if self.__bestAnt.id is None and currentAnt.makeSpan <= self.deadline:
             self.__bestAnt = copy.deepcopy(currentAnt)
             # self.__bestAnt.saveSolution()
-            # print("best ant: " + str(self.__bestAnt.solutionCost))
+            print("best ant: " + str(self.__bestAnt.solutionCost))
 
         elif currentAnt.solutionCost < self.__bestAnt.solutionCost and currentAnt.makeSpan <= self.deadline:
             self.__bestAnt = copy.deepcopy(currentAnt)
             # self.__bestAnt.saveSolution()
             # self.__bestAnt.saveSolution2()
-            # print("best ant: " + str(self.__bestAnt.solutionCost))
+            print("best ant: " + str(self.__bestAnt.solutionCost))
 
-        self.updatePheromone(currentAnt)
+        # self.updatePheromone(currentAnt)
         self.__environment.getProblemGraph().getInstanceSet().resetPerAnt()
         self.__environment.getProblemGraph().resetProblemNodeList()
         self.__environment.getProblemGraph().resetNodes()
@@ -292,24 +289,25 @@ class CloudACO:
             #     thr.join()
 
             # self.updatePheromone(self.__bestAnt)
+            self.localUpdate()
 
-            if globalAnt is None:
-                globalAnt = copy.deepcopy(self.__bestAnt)
-                print("first xxx is  :   " + str(globalAnt.solutionCost))
-            elif globalAnt.solutionCost > self.__bestAnt.solutionCost and self.__bestAnt.makeSpan != 0:
-                globalAnt = copy.deepcopy(self.__bestAnt)
-                print("gloooooooooooballlllllllllllll is  :   " + str(globalAnt.solutionCost))
+            # if globalAnt is None:
+            #     globalAnt = copy.deepcopy(self.__bestAnt)
+            #     print("first xxx is  :   " + str(globalAnt.solutionCost))
+            # elif globalAnt.solutionCost > self.__bestAnt.solutionCost and self.__bestAnt.makeSpan != 0:
+            #     globalAnt = copy.deepcopy(self.__bestAnt)
+            #     print("gloooooooooooballlllllllllllll is  :   " + str(globalAnt.solutionCost))
 
-            self.updatePheromone(globalAnt)
+            self.updatePheromone(self.__bestAnt)
 
-            self.__bestAnt = self.Ant(size=environment.getProblemGraph().getGraphSize())
+            # self.__bestAnt = self.Ant(size=environment.getProblemGraph().getGraphSize())
 
             itr += 1
 
-        print("best ant best: " + str(globalAnt.solutionCost))
-        globalAnt.saveSolution()
+        print("best ant best: " + str(self.__bestAnt.solutionCost))
+        self.__bestAnt.saveSolution()
         # self.__globalant.saveSolution2()
-        return globalAnt.solutionCost
+        return self.__bestAnt.solutionCost
 
     class Ant:
         def __init__(self, id=None, size=0):
