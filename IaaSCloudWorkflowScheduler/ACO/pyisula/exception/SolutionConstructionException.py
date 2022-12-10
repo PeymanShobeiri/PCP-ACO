@@ -1,2 +1,0 @@
-class SolutionConstructionException(RuntimeError):
-    pass

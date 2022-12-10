@@ -1,2 +1,0 @@
-class MethodNotImplementedException(RuntimeError):
-    pass

@@ -1,2 +1,0 @@
-class ConfigurationException(RuntimeError):
-    pass
