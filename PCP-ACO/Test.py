@@ -33,8 +33,6 @@ class test:
             wb = WorkflowBroker(wfFile, ScheduleType.Cheapest)
             CC = wb.schedule(startTime, deadline)
             MC = wb.graph.getNodes()[wb.graph.getEndId()].getAST()
-            # wb.getPolicy().computeESTandEFT(startTime)
-            # wb.getPolicy().computeLSTandLFT(deadline)
             print("Cheapest: cost= " + str(CC) + " time= " + str(MC))
         except Exception as e:
             print("Error in creating workflow broker!!!!" + '  ' + str(e))
@@ -60,7 +58,7 @@ class test:
         MH = self.computeFastest(workflowPath, startTime, deadline)
         MC = self.computeCheapest(workflowPath, startTime, deadline)
 
-        alpha = 3
+        alpha = 1.5
         while alpha <= 5:
             deadline = ceil(alpha * MH)
 
@@ -130,10 +128,15 @@ class test:
                     problemRepresentation = CloudAcoProblemRepresentation(wb.graph, wb.resources, Constants.BANDWIDTH, deadline, MAX_Parallel)
                     environment = CloudAcoEnvironment(problemGraph=problemRepresentation)
                     cloudACO = CloudACO(environment.getProblemGraph().getGraphSize())
+
+                    realStartTime = round(time.time())
                     OptimalCost = cloudACO.schedule(environment, deadline)
+                    realFinishTime = round(time.time())
+                    realFinishTime -= realStartTime
+                    print("total time is : " + str(realFinishTime) + "------> Cost is : " + str(OptimalCost))
+
+                    return
                     summ += OptimalCost
-                    # x.append(alpha)
-                    # y.append(OptimalCost)
                     print("==================================MY_ACO")
                 except Exception as e:
                     print("EEEEEException" + str(e))
@@ -143,12 +146,6 @@ class test:
             print("average : " + str(summ / 5))
             return
             alpha += 1.0
-        # plt.plot(x, y)
-        # plt.plot(x, y2)
-        # plt.xlabel('Deadline Factor')
-        # plt.ylabel('Normalized Cost')
-        # plt.title('My ACO')
-        # plt.show()
 
     def printWorkflow(self, g):
         pass

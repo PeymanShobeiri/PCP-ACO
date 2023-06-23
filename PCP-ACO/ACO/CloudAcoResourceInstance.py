@@ -10,6 +10,7 @@ class CloudAcoResourceInstance:
         self.__resource = resource
         self.__currentTask = None
         self.__currentTaskDuration = 0
+        self.totalDuration = 0
         self.__processedTasks = []
         self.__processedTasksIds = set()
         self.__currentStartTime = 0
@@ -19,6 +20,9 @@ class CloudAcoResourceInstance:
 
     def getPTI(self):
         return len(self.__processedTasksIds)
+
+    def getPeriod(self):
+        return self.__PERIOD_DURATION
 
     def getResource(self):
         return self.__resource
@@ -69,7 +73,7 @@ class CloudAcoResourceInstance:
     def setCurrentTask(self, cloudAcoProblemNode, env, curt):
         node = curt
         if str(node.getId()).lower() == "start" or str(
-                node.getId()).lower() == "end":  # i personally think that end is missing here becouse like start end is not allowed to be set !
+                node.getId()).lower() == "end":
             return
 
         newTaskDuration = self.getTaskDuration(node)
@@ -84,6 +88,7 @@ class CloudAcoResourceInstance:
             self.__instanceFinishTime = addedTimeToProvision
             self.__currentStartTime = max(self.getNewStartTime(node, env), 0)
             self.__currentTaskDuration = newTaskDuration
+            self.totalDuration += newTaskDuration
             self.__currentTask = node
             self.__totalCost += countOfHoursToProvision * self.__resource.getCost()
             # if cloudAcoProblemNode.getInstanceId() == 192:
@@ -105,6 +110,7 @@ class CloudAcoResourceInstance:
             self.__currentStartTime = max(self.getNewStartTime(node, env), self.__currentTask.getAFT())       # it shoudn't be last node.AFT ??
             # self.__currentStartTime = max(int(self.getInstanceReleaseTime()), node.getEST())  # for id05  is (15, 21)
             self.__currentTaskDuration = newTaskDuration
+            self.totalDuration += newTaskDuration
             self.__currentTask = node
             self.__totalCost += countOfHoursToProvision * self.__resource.getCost()
 
@@ -141,6 +147,7 @@ class CloudAcoResourceInstance:
 
     def reset(self):
         self.__totalCost = 0
+        self.totalDuration = 0
         self.__instanceStartTime = 0
         self.__currentTask = None
         self.__currentTaskDuration = 0
