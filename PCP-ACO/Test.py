@@ -40,7 +40,7 @@ class test:
         return MC
 
     def scheduleWorkflow(self):
-        workflowPath = "../Workflows/Montage_25.xml"
+        workflowPath = "../Workflows/Epigenomics_24.xml"
 
         startTime = 0
         deadline = 1000
@@ -68,10 +68,11 @@ class test:
                 print("Error ?!!" + '  ' + str(e))
                 traceback.print_exc()
 
-            realStartTime = round(time.time() * 1000)
+            realStartTime = round(time.time() )
             cost = wb.schedule(startTime, deadline)
-            realFinishTime = round(time.time() * 1000)
+            realFinishTime = round(time.time())
             realFinishTime -= realStartTime
+            print("finish time -----> " + str(realFinishTime))
             finishTime = wb.graph.getNodes()[wb.graph.getEndId()].getEFT()
             message = "\n\nICPCP finishT < deadline: " + \
                       str((finishTime < deadline)) + " --> " + str(finishTime) + \

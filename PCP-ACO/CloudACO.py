@@ -25,7 +25,7 @@ class CloudACO:
         self.__P_RATIO = 1
         self.__EVAP_RATIO = 0.1
         self.__Q0 = 0.8
-        self.__iterCount = 500
+        self.__iterCount = 400
         self.__antCount = 10
         self.__pheromone = None
         self.__heuristic = []
@@ -182,8 +182,10 @@ class CloudACO:
             result += inst.getTotalCost()
             if inst.getTotalCost() != 0:
                 usedTime += inst.totalDuration
-                totalTime += inst.getPeriod()
-        return result, usedTime/totalTime
+                totalTime += inst.totaltime
+        # print(usedTime/(totalTime * 3600))
+        t = usedTime/(totalTime * 3600)
+        return result, t
 
     def releasePheromone(self, bestAnt):
         if bestAnt.solutionCost != 0:

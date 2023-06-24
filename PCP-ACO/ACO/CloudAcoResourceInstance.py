@@ -11,6 +11,7 @@ class CloudAcoResourceInstance:
         self.__currentTask = None
         self.__currentTaskDuration = 0
         self.totalDuration = 0
+        self.totaltime = 0
         self.__processedTasks = []
         self.__processedTasksIds = set()
         self.__currentStartTime = 0
@@ -89,6 +90,7 @@ class CloudAcoResourceInstance:
             self.__currentStartTime = max(self.getNewStartTime(node, env), 0)
             self.__currentTaskDuration = newTaskDuration
             self.totalDuration += newTaskDuration
+            self.totaltime = countOfHoursToProvision
             self.__currentTask = node
             self.__totalCost += countOfHoursToProvision * self.__resource.getCost()
             # if cloudAcoProblemNode.getInstanceId() == 192:
@@ -111,6 +113,7 @@ class CloudAcoResourceInstance:
             # self.__currentStartTime = max(int(self.getInstanceReleaseTime()), node.getEST())  # for id05  is (15, 21)
             self.__currentTaskDuration = newTaskDuration
             self.totalDuration += newTaskDuration
+            self.totaltime += countOfHoursToProvision
             self.__currentTask = node
             self.__totalCost += countOfHoursToProvision * self.__resource.getCost()
 
