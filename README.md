@@ -46,7 +46,26 @@ Here are a few examples of how to use the PCP-ACO algorithm:
 
 
 ```python
-# Provide example code snippets or a brief description of how to use the algorithm
+#choose your workflow
+workflow_Path = "../Workflows/Epigenomics_24.xml"
+
+# compute the EST, EFT, LST, LFT
+wb = WorkflowBroker(workflow_Path, ScheduleType.IC_PCPD2_2)
+wb.getPolicy().computeESTandEFT(startTime)
+wb.getPolicy().computeLSTandLFT(deadline)
+
+# distribute the deadline and assign sub-deadline to each node
+wb.getPolicy().distributeDeadline()
+
+# Finding the Max Parallel 
+wb.getGraph().setMaxParallel(wb.getPolicy().FindMaxParallel())
+
+# Create an environment for ants to travel
+environment = CloudAcoEnvironment(CloudAcoProblemRepresentation(wb.graph, wb.resources, Constants.BANDWIDTH, deadline, MAX_Parallel))
+
+# Create a PCP_ACO object for scheduling
+PCP_ACO = CloudACO(environment.getProblemGraph().getGraphSize())
+cost = PCP_ACO.schedule(environment, deadline)
 ```
 
 ## Contributing
