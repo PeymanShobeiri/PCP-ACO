@@ -86,9 +86,9 @@ class PcpD2Policy2(WorkflowPolicy):
         problemNodeList = []
         mId = 0
 
-        for instances in self._instances.getInstances().values():
-            for instance in instances:
-                problemNodeList.append(instance)
+        for instances in self._instances.getInstances():
+            # for instance in instances:
+            problemNodeList.append(instances)
 
         for curNode in self.sortedWorkflowNodes:
             if curNode.getId() == "start":

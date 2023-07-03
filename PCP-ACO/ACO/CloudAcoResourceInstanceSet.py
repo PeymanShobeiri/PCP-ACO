@@ -9,15 +9,15 @@ class CloudAcoResourceInstanceSet:
         coef = 1
         for j in range(resources.getSize()):
             resource = resources.getResource(j)
-            instances = []
-            instances.append(CloudAcoResourceInstance(resource, id))
+            # instances = []
+            instances = CloudAcoResourceInstance(resource, id)
             id = coef * count
             coef += 1
-            self.instances[resource] = instances
+            self.instances.append(instances)
 
     def __init__(self, resources, count):
 
-        self.instances = {}
+        self.instances = []
         self.initialize(resources, count)
 
     def getInstances(self):
@@ -37,6 +37,5 @@ class CloudAcoResourceInstanceSet:
         return max
 
     def resetPerAnt(self):
-        for instances in self.instances.values():
-            for instance in instances:
-                instance.reset()
+        for instance in self.instances:
+            instance.reset()

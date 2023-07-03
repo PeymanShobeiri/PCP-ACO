@@ -13,7 +13,7 @@ class CloudACO:
 
     def __init__(self):
         # ACO Parameters
-        self.MaxIt = 500
+        self.MaxIt = 400
         self.nAnt = 10
         self.H_RATIO = 5
         self.P_RATIO = 1
@@ -91,20 +91,19 @@ class CloudACO:
                 temp = 0.0
                 tempDuration = 0.0
 
-                for entry in self.environment._instances.instances.items():
-                    test3 = entry[1]  # test3 is the instance on the each resource
-                    for instance in test3:
-                        temp = instance.getCost(task)
-                        tempDuration = instance.getTaskDuration(task)
-                        if temp > maxCost:
-                            maxCost = temp
-                        if temp < minCost:
-                            minCost = temp
+                for instance in self.environment._instances.instances:
+                    tempDuration = round(curtask.instructionSize / instance.resource.MIPS)
+                    temp = instance.getCost(tempDuration)
 
-                        if tempDuration > slowest:
-                            slowest = tempDuration
-                        if tempDuration < fastest:
-                            fastest = tempDuration
+                    if temp > maxCost:
+                        maxCost = temp
+                    if temp < minCost:
+                        minCost = temp
+
+                    if tempDuration > slowest:
+                        slowest = tempDuration
+                    if tempDuration < fastest:
+                        fastest = tempDuration
 
                 h2 = ((maxCost - curCost + 1) / (maxCost - minCost + 1))
 
@@ -175,9 +174,8 @@ class CloudACO:
         problemNodeList = []
         mId = 0
 
-        for instances in self.environment._instances.instances.values():
-            for instance in instances:
-                problemNodeList.append(instance)
+        for instance in self.environment._instances.instances:
+            problemNodeList.append(instance)
 
         for curNode in self.environment.sortedWorkflowNodes:
             if curNode.getId() == "start":
@@ -282,13 +280,15 @@ class CloudACO:
                 ant[j].cost, ant[j].Utils = self.getSolutionCost()
 
                 if ant[j].cost < bestAnt.cost and ant[j].makeSpan <= deadline:
-                    print("best ant: " + str(bestAnt.cost))
                     bestAnt = ant[j].deepcopy()
+                    print("best ant: " + str(bestAnt.cost))
+
 
                 self.localUpdate()
                 self.environment._instances.resetPerAnt()
                 self.environment.problemNodeList = self.resetProblemNodeList()
                 self.resetNodes()
+                return 
 
             self.updatePheromone(bestAnt)
 

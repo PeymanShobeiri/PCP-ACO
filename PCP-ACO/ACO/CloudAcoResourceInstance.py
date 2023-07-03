@@ -19,6 +19,7 @@ class CloudAcoResourceInstance:
         self.instanceFinishTime = 0.0
         self.totalCost = 0
         self.instanceStartTime = None
+        self.taskStart = 0
 
     def getPTI(self):
         return len(self.processedTasksIds)
@@ -78,14 +79,15 @@ class CloudAcoResourceInstance:
             return
 
         # newTaskDuration = h_matrix[node.matrixid][self.instanceId].duration
-        newTaskDuration = node.instructionSize / self.resource.MIPS
+        newTaskDuration = round(node.instructionSize / self.resource.MIPS)
         countOfHoursToProvision = max(int(ceil((newTaskDuration - max(self.instanceFinishTime - node.EST, 0)) / (self.PERIOD_DURATION * 1.0))), 0)
         addedTimeToProvision = (countOfHoursToProvision * self.PERIOD_DURATION)
 
         if self.currentTask is None:
             self.instanceStartTime = finished[node.id]
+            self.taskStart = finished[node.id]
             self.instanceFinishTime = addedTimeToProvision
-            self.currentStartTime = finished[node.id]
+            self.currentStartTime = round(finished[node.id] + newTaskDuration)
             self.currentTaskDuration = newTaskDuration
             self.totalDuration += newTaskDuration
             self.totaltime = countOfHoursToProvision
@@ -101,15 +103,16 @@ class CloudAcoResourceInstance:
             countOfHoursToProvision = max(int(round((newTaskDuration - remain) / float(self.PERIOD_DURATION))), 0)
             addedTimeToProvision = (countOfHoursToProvision * self.PERIOD_DURATION)
             self.instanceFinishTime += addedTimeToProvision
-            self.currentStartTime = max(self.getNewStartTime(node, env), self.currentTask.getAFT())
+            self.taskStart = max(finished[node.id], self.currentStartTime)
+            self.currentStartTime = round(self.taskStart + newTaskDuration)
             self.currentTaskDuration = newTaskDuration
             self.totalDuration += newTaskDuration
             self.totaltime += countOfHoursToProvision
             self.currentTask = node
             self.totalCost += countOfHoursToProvision * self.resource.getCost()
 
-        node.AST = int(round(self.currentStartTime))
-        node.AFT = int(round(self.currentStartTime + newTaskDuration))
+        node.AST = int(round(self.taskStart))
+        node.AFT = int(round(self.taskStart + newTaskDuration))
         node.runTime = newTaskDuration
         node.selectedResource = self
         node.selectedInstance = self.instanceId
