@@ -3,8 +3,7 @@ import Instance
 
 
 class InstanceSet:
-    def __init__(self, rs):
-        self.__resources = rs
+    def __init__(self):
         self.__instances = []
         self.__size = 0
 

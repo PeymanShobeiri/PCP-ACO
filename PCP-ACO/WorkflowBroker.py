@@ -5,16 +5,11 @@ from Constants import Constants
 from WorkflowGraph import WorkflowGraph
 from ResourceSet import ResourceSet
 from Resource import Resource
-from ScheduleType import ScheduleType
 from FastestPolicy import FastestPolicy
 from CheapestPolicy import CheapestPolicy
-from PcpPolicyInsertion import PcpPolicyInsertion
-from PcpD2Policy import PcpD2Policy
-from ListPolicy2 import ListPolicy2
 from PcpPolicy2 import PcpPolicy2
 from PcpD2Policy2 import PcpD2Policy2
-from ListPolicy3 import ListPolicy3
-from ICLossPolicy2 import ICLossPolicy2
+
 
 class WorkflowBroker:
 
@@ -50,24 +45,15 @@ class WorkflowBroker:
         self.graph.convertDagToWorkflowGraph(dag)
         self.createResourceList()
 
-        if type == ScheduleType.Fastest:
+        if type == "Fastest":
             self.policy = FastestPolicy(self.graph, self.resources, self.bandwidth)
-        elif type == ScheduleType.Cheapest:
+        elif type == "Cheapest":
             self.policy = CheapestPolicy(self.graph, self.resources, self.bandwidth)
-        elif type == ScheduleType.IC_PCP:
-            self.policy = PcpPolicyInsertion(self.graph, self.resources, self.bandwidth)
-        elif type == ScheduleType.IC_PCPD2:
-            self.policy = PcpD2Policy(self.graph, self.resources, self.bandwidth)
-        elif type == ScheduleType.List:
-            self.policy = ListPolicy2(self.graph, self.resources, self.bandwidth)
-        elif type == ScheduleType.IC_PCP2:
+        elif type == "IC_PCP2":
             self.policy = PcpPolicy2(self.graph, self.resources, self.bandwidth)
-        elif type == ScheduleType.IC_PCPD2_2:
+        elif type == "PCP_ACO":
             self.policy = PcpD2Policy2(self.graph, self.resources, self.bandwidth)
-        elif type == ScheduleType.List2:
-            self.policy = ListPolicy3(self.graph, self.resources, self.bandwidth)
-        elif type == ScheduleType.IC_Loss:
-            self.policy = ICLossPolicy2(self.graph, self.resources, self.bandwidth)
+
 
     def schedule(self, startTime, deadline) -> float:
         tmp = self.policy.schedule(startTime, deadline)
