@@ -6,7 +6,7 @@ from ypstruct import structure
 import numpy as np
 import random
 import copy
-import sys
+import time
 
 
 class CloudACO:
@@ -53,10 +53,10 @@ class CloudACO:
         bestIndex = -1
         for i in range(len(candidateNodes)):
             sw = 0
-            # curCost = self.h_matrix[curtask.matrixid][candidateNodes[i].instanceId].cost
-            curCost = candidateNodes[i].resource.costPerInterval
-            # currentDuration = self.h_matrix[curtask.matrixid][candidateNodes[i].instanceId].duration
             currentDuration = round(curtask.instructionSize / candidateNodes[i].resource.MIPS)
+
+            curCost = candidateNodes[i].getCost(currentDuration)
+
             currentST = max(candidateNodes[i].currentStartTime, self.finished[curtask.id])
             currentFT = currentST + currentDuration
 
@@ -84,10 +84,27 @@ class CloudACO:
                             (curtask.LFT - curtask.subDeadline) + 1)))
                     bad = True
 
-                maxCost = 20
-                minCost = 0.8
-                fastest = round(curtask.instructionSize / 100)
-                slowest = round(curtask.instructionSize / 20)
+                maxCost = -1
+                minCost = np.inf
+                fastest = np.inf
+                slowest = 0
+                temp = 0.0
+                tempDuration = 0.0
+
+                for entry in self.environment._instances.instances.items():
+                    test3 = entry[1]  # test3 is the instance on the each resource
+                    for instance in test3:
+                        temp = instance.getCost(task)
+                        tempDuration = instance.getTaskDuration(task)
+                        if temp > maxCost:
+                            maxCost = temp
+                        if temp < minCost:
+                            minCost = temp
+
+                        if tempDuration > slowest:
+                            slowest = tempDuration
+                        if tempDuration < fastest:
+                            fastest = tempDuration
 
                 h2 = ((maxCost - curCost + 1) / (maxCost - minCost + 1))
 
@@ -141,25 +158,13 @@ class CloudACO:
         t = usedTime / (totalTime * 3600)
         return result, t
 
-    # def releasePheromone(self, bestAnt):
-    #     if bestAnt.solutionCost != 0:
-    #         value = self.EVAP_RATIO * (1 / bestAnt.solutionCost) + 0.05
-    #         i = 1
-    #         while i < len(bestAnt.solution) and not bestAnt.solution[i + 1].getId().lower() == "end":
-    #             self.pheromone[bestAnt.solution[i].getSelectedResource().getInstanceId()][
-    #                 bestAnt.solution[i].getMatrixId()] = (self.pheromone[bestAnt.solution[
-    #                 i].getSelectedResource().getInstanceId()][bestAnt.solution[i].getMatrixId()] * (
-    #                                                               1 - self.EVAP_RATIO)) + value
-    #             i += 1
-
     def updatePheromone(self, bestAnt):
         if bestAnt.cost != 0:
             value = self.EVAP_RATIO * (1 / bestAnt.cost) + 0.05
             i = 1
             while i < len(bestAnt.solution) and not bestAnt.solution[i + 1].getId().lower() == "end":
-                self.pheromone[bestAnt.solution[i].getSelectedResource().getInstanceId()][
-                    bestAnt.solution[i].getMatrixId()] = (self.pheromone[bestAnt.solution[
-                    i].getSelectedResource().getInstanceId()][bestAnt.solution[i].getMatrixId()] * (
+
+                self.pheromone[bestAnt.solution[i].getMatrixId()][bestAnt.solution[i].getSelectedResource().getInstanceId()] = (self.pheromone[bestAnt.solution[i].getMatrixId()][bestAnt.solution[i].getSelectedResource().getInstanceId()] * (
                                                                   1 - self.EVAP_RATIO)) + value
                 i += 1
 
@@ -276,7 +281,7 @@ class CloudACO:
                 ant[j].makeSpan = ant[j].solution[-2].AFT
                 ant[j].cost, ant[j].Utils = self.getSolutionCost()
 
-                if ant[j].cost < bestAnt.cost and ant[j].makeSpan < deadline:
+                if ant[j].cost < bestAnt.cost and ant[j].makeSpan <= deadline:
                     print("best ant: " + str(bestAnt.cost))
                     bestAnt = ant[j].deepcopy()
 

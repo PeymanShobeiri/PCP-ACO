@@ -121,7 +121,7 @@ class PcpD2Policy2(WorkflowPolicy):
     def schedule(self, startTime, deadline):
         cost = None
 
-        self.setRuntimes()
+        # self.setRuntimes()
         self.computeESTandEFT(startTime)
         self.computeLSTandLFT(deadline)
         self.initializeStartEndNodes(startTime, deadline)

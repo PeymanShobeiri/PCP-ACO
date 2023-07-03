@@ -121,13 +121,12 @@ class CloudAcoResourceInstance:
     def getTotalCost(self):
         return self.totalCost
 
-    def getCost(self, node):
-        newTaskDuration = self.getTaskDuration(node)
+    def getCost(self, newTaskDuration):
         countOfHoursToProvision = int(ceil(newTaskDuration / float(self.PERIOD_DURATION)))
 
-        if countOfHoursToProvision == 0:  # we don't need this becouse it's alwayes 1 at Least
+        if countOfHoursToProvision == 0:
             countOfHoursToProvision = 1
-        # not started yet!
+
         if self.currentTask is None:
             return self.getResource().getCost() * countOfHoursToProvision
         else:
