@@ -272,7 +272,7 @@ class CloudACO:
                     else:
                         dest = self.rwsSelection(candidateNodes, self.probability)
 
-                    dest.setCurrentTask(dest, environment, curTask, self.h_matrix, self.finished)
+                    dest.setCurrentTask(dest, environment, curTask, self.finished)
 
                     ant[j].solution.append(curTask)
 
@@ -288,7 +288,7 @@ class CloudACO:
                 self.environment._instances.resetPerAnt()
                 self.environment.problemNodeList = self.resetProblemNodeList()
                 self.resetNodes()
-                return 
+                return
 
             self.updatePheromone(bestAnt)
 

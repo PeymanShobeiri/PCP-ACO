@@ -73,7 +73,7 @@ class CloudAcoResourceInstance:
     def getInstanceReleaseTime(self):
         return self.currentStartTime + self.currentTaskDuration
 
-    def setCurrentTask(self, cloudAcoProblemNode, env, curt, h_matrix, finished):
+    def setCurrentTask(self, cloudAcoProblemNode, env, curt, finished):
         node = curt
         if str(node.id).lower() == "start" or str(node.id).lower() == "end":
             return
@@ -99,7 +99,7 @@ class CloudAcoResourceInstance:
                 env.problemNodeList.append(newinst)
 
         else:
-            remain = self.getInstanceRemainingTime(self.getInstanceReleaseTime())
+            remain = self.instanceFinishTime - self.totalDuration
             countOfHoursToProvision = max(int(round((newTaskDuration - remain) / float(self.PERIOD_DURATION))), 0)
             addedTimeToProvision = (countOfHoursToProvision * self.PERIOD_DURATION)
             self.instanceFinishTime += addedTimeToProvision

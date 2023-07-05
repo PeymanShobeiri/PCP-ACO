@@ -30,7 +30,7 @@ def computeCheapest(wfFile, startTime, deadline):
     return MC
 
 
-workflowPath = "../Workflows/Montage_1000.xml"
+workflowPath = "../Workflows/Montage_25.xml"
 startTime = 0
 MH = computeFastest(workflowPath, startTime, 1000)
 deadline_factor = 1.5
