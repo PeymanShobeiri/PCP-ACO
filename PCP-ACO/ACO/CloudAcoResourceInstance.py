@@ -82,17 +82,18 @@ class CloudAcoResourceInstance:
         newTaskDuration = round(node.instructionSize / self.resource.MIPS)
         countOfHoursToProvision = max(int(ceil((newTaskDuration - max(self.instanceFinishTime - node.EST, 0)) / (self.PERIOD_DURATION * 1.0))), 0)
         addedTimeToProvision = (countOfHoursToProvision * self.PERIOD_DURATION)
+        tmp = {}
 
         if self.currentTask is None:
-            self.instanceStartTime = finished[node.id]
-            self.taskStart = finished[node.id]
-            self.instanceFinishTime = addedTimeToProvision
-            self.currentStartTime = round(finished[node.id] + newTaskDuration)
-            self.currentTaskDuration = newTaskDuration
-            self.totalDuration += newTaskDuration
-            self.totaltime = countOfHoursToProvision
-            self.currentTask = node
-            self.totalCost += countOfHoursToProvision * self.resource.costPerInterval
+            tmp["instanceStartTime"] = finished[node.id]
+            tmp["taskStart"] = finished[node.id]
+            tmp["instanceFinishTime"] = addedTimeToProvision
+            tmp["currentStartTime"] = round(finished[node.id] + newTaskDuration)
+            tmp["currentTaskDuration"] = newTaskDuration
+            tmp["totalDuration"] = newTaskDuration
+            tmp["totaltime"] = countOfHoursToProvision
+            tmp["currentTask"] = node
+            tmp["totalCost"] = countOfHoursToProvision * self.resource.costPerInterval
 
             if cloudAcoProblemNode.instanceId + 1 != env._graph.maxParallel and not cloudAcoProblemNode.getInstanceId() + 1 >= env._graph.maxParallel * env._resources.size:
                 newinst = CloudAcoResourceInstance(cloudAcoProblemNode.resource, cloudAcoProblemNode.instanceId + 1)
@@ -102,24 +103,26 @@ class CloudAcoResourceInstance:
             remain = self.instanceFinishTime - self.totalDuration
             countOfHoursToProvision = max(int(round((newTaskDuration - remain) / float(self.PERIOD_DURATION))), 0)
             addedTimeToProvision = (countOfHoursToProvision * self.PERIOD_DURATION)
-            self.instanceFinishTime += addedTimeToProvision
-            self.taskStart = max(finished[node.id], self.currentStartTime)
-            self.currentStartTime = round(self.taskStart + newTaskDuration)
-            self.currentTaskDuration = newTaskDuration
-            self.totalDuration += newTaskDuration
-            self.totaltime += countOfHoursToProvision
-            self.currentTask = node
-            self.totalCost += countOfHoursToProvision * self.resource.getCost()
+            tmp["instanceFinishTime"] += addedTimeToProvision
+            tmp["taskStart"] = max(finished[node.id], self.currentStartTime)
+            tmp["currentStartTime"] = round(self.taskStart + newTaskDuration)
+            tmp["currentTaskDuration"] = newTaskDuration
+            tmp["totalDuration"] += newTaskDuration
+            tmp["totaltime"] += countOfHoursToProvision
+            tmp["currentTask"] = node
+            tmp["totalCost"] += countOfHoursToProvision * self.resource.getCost()
 
-        node.AST = int(round(self.taskStart))
-        node.AFT = int(round(self.taskStart + newTaskDuration))
-        node.runTime = newTaskDuration
-        node.selectedResource = self
-        node.selectedInstance = self.instanceId
+        antNode = {}
+        antNode["id"] = node.id
+        antNode["AST"] = int(round(self.taskStart))
+        antNode["AFT"] = int(round(self.taskStart + newTaskDuration))
+        antNode["runTime"] = newTaskDuration
+        antNode["selectedInstance"] = self.instanceId
 
-        node.scheduled = True
-        self.processedTasks.append(node)
-        self.processedTasksIds.add(node.id)
+        # self.processedTasks.append(node)
+        # self.processedTasksIds.add(node.id)
+        tmp["processedTasksIds"] = node.id
+        return antNode, tmp
 
     def getTotalCost(self):
         return self.totalCost
@@ -149,6 +152,7 @@ class CloudAcoResourceInstance:
         self.instanceFinishTime = 0
         self.processedTasks = []
         self.currentStartTime = 0
+        self.taskStart = 0
         self.processedTasksIds.clear()
 
     def getInstanceFinishTime(self):

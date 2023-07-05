@@ -5,7 +5,7 @@ class WorkflowNode:
     def __init__(self, nodeId, nodeName='', inSize=0, outSize=0, rt=0):
 
         self.id = nodeId
-        self.matrixid = None
+        # self.matrixid = None
         self.name = nodeName
         self.inputFileSize = inSize
         self.outputFileSize = outSize

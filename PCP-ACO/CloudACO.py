@@ -3,11 +3,14 @@ from concurrent.futures import ThreadPoolExecutor
 from prettytable import PrettyTable
 from Constants import Constants
 from ypstruct import structure
+from threading import Lock
 import numpy as np
+import pickle
 import random
 import copy
 import time
 
+lock = Lock()
 
 class CloudACO:
 
@@ -28,20 +31,6 @@ class CloudACO:
         self.__colony = []
         self.environment = None
         self.heuristicCache = {}
-
-    def initPheromone(self, env):
-        instance_NO = (env.getProblemGraph().getResourceSet().getSize()) * (
-            env.getProblemGraph().getGraph().getMaxParallel()) + 5
-        
-        self.pheromone = np.full((instance_NO, instance_NO), 0.04)
-
-    def initColony(self, antCount, graphSize):
-        start = self.environment.getProblemGraph().getStart()
-        self.__colony = [None] * antCount
-        for k in range(antCount):
-            ant = self.Ant(k, graphSize)
-            ant.solution[0] = start
-            self.__colony[k] = ant
 
     def getBandwidthDuration(self, node, parent):
         duration = float(parent.getDataSize()) / (Constants.BANDWIDTH * 1.0)
@@ -160,12 +149,8 @@ class CloudACO:
     def updatePheromone(self, bestAnt):
         if bestAnt.cost != 0:
             value = self.EVAP_RATIO * (1 / bestAnt.cost) + 0.05
-            i = 1
-            while i < len(bestAnt.solution) and not bestAnt.solution[i + 1].getId().lower() == "end":
-
-                self.pheromone[bestAnt.solution[i].getMatrixId()][bestAnt.solution[i].getSelectedResource().getInstanceId()] = (self.pheromone[bestAnt.solution[i].getMatrixId()][bestAnt.solution[i].getSelectedResource().getInstanceId()] * (
-                                                                  1 - self.EVAP_RATIO)) + value
-                i += 1
+            for sol in bestAnt.solution:
+                self.pheromone[int(sol["id"].split("ID")[1])][sol["selectedInstance"]] = ((self.pheromone[int(sol["id"].split("ID")[1])][sol["selectedInstance"]]) * (1 - self.EVAP_RATIO)) + value
 
     def localUpdate(self):
         self.pheromone = (1 - self.EVAP_RATIO) * self.pheromone + (self.EVAP_RATIO * 0.04) + 0.001  # + 0.02
@@ -177,35 +162,7 @@ class CloudACO:
         for instance in self.environment._instances.instances:
             problemNodeList.append(instance)
 
-        for curNode in self.environment.sortedWorkflowNodes:
-            if curNode.getId() == "start":
-                # self.__start = curNode
-                curNode.setMatrixId(0)
-                curNode.setSelectedResource(problemNodeList[len(problemNodeList)-1])
-
-            elif curNode.getId() == "end":
-                # self.__end = curNode
-                curNode.setMatrixId(mId)
-                curNode.setSelectedResource(problemNodeList[len(problemNodeList)-1])
-            else:
-                curNode.setMatrixId(mId)
-                mId += 1
-
         return problemNodeList
-
-    def resetNodes(self):
-        for node in self.environment._graph.nodes.items():
-            curnode = node[1]
-            if curnode.id == "start" or curnode.id == "end":
-                curnode.selectedResource = self.environment.problemNodeList[-1]
-            else:
-                curnode.selectedResource = -1
-            curnode.selectedInstance = -1
-            curnode.AST = None
-            if curnode.id == "start":
-                curnode.AFT = 0
-            else:
-                curnode.AFT = None
 
     def schedule(self, environment, deadline):
         self.environment = environment
@@ -215,9 +172,12 @@ class CloudACO:
         empty_ant.cost = 0.0
         empty_ant.makeSpan = 0.0
         empty_ant.Utils = 0.0
+        empty_ant.AFT_Dic = {}
+        empty_ant.instances = []
 
         # Best solution ever found
         bestAnt = empty_ant.deepcopy()
+        bestAnt.solution = []
         bestAnt.cost = np.inf
         bestAnt.makeSpan = np.inf
         bestAnt.Utils = 0.0
@@ -232,63 +192,56 @@ class CloudACO:
         # Create the finished dictionary
         self.finished = {"start": 0, "end": deadline}
 
-        # Creating heuristic information matrix
-        # self.h_matrix = np.full((environment._graph.nodeNum, environment._resources.size * environment._graph.maxParallel), None)
-        # row = 0
-        # for node in environment.sortedWorkflowNodes:
-        #     if node.id == "start" or node.id == "end":
-        #         continue
-        #     for ins in environment.problemNodeList:
-        #         tmp = structure()
-        #         tmp.cost = ins.resource.costPerInterval
-        #         tmp.duration = round(node.instructionSize / ins.resource.MIPS)
-        #         tmp.startTime = ins.currentStartTime
-        #         tmp.heuristic = 0.0
-        #
-        #         self.h_matrix[row, ins.instanceId] = tmp
-        #     row += 1
-
         # ACO main loop
         for it in range(self.MaxIt):
             # Move Ants
-            for j in range(self.nAnt):
-                ant[j].solution.append(environment._graph.startNode)
-                for k in range(1, environment._graph.nodeNum):
-                    curTask = environment.sortedWorkflowNodes[k]
-                    candidateNodes = environment.problemNodeList
+            with ThreadPoolExecutor(max_workers=self.nAnt) as executor:
+                def run_ant(j):
+                    lock.acquire()
+                    ant[j].AFT_Dic = {'start': 0}
+                    for k in range(1, environment._graph.nodeNum - 1):
+                        curTask = environment.sortedWorkflowNodes[k]
+                        candidateNodes = environment.problemNodeList
 
-                    # A matrix for finish times for each node
-                    mx = 0
-                    for parent in curTask.parents:
-                        P_AFT = self.environment._graph.nodes.get(parent.getId()).AFT
-                        if P_AFT > mx:
-                            mx = P_AFT
-                    self.finished[curTask.id] = mx
+                        # A matrix for finish times for each node
+                        mx = 0
+                        for parent in curTask.parents:
+                            if ant[j].AFT_Dic[parent.id] > mx:
+                                mx = ant[j].AFT_Dic[parent.id]
+                        self.finished[curTask.id] = mx
 
-                    bestOptionByProbability = self.calculateHeuristic(candidateNodes, curTask)
+                        bestOptionByProbability = self.calculateHeuristic(candidateNodes, curTask)
 
-                    if random.random() < self.Q0:
-                        dest = candidateNodes[bestOptionByProbability]
-                    else:
-                        dest = self.rwsSelection(candidateNodes, self.probability)
+                        if random.random() < self.Q0:
+                            dest = candidateNodes[bestOptionByProbability]
+                        else:
+                            dest = self.rwsSelection(candidateNodes, self.probability)
 
-                    dest.setCurrentTask(dest, environment, curTask, self.finished)
+                        newNode, tmp = dest.setCurrentTask(dest, environment, curTask, self.finished, ant[j])
 
-                    ant[j].solution.append(curTask)
+                        ant[j].solution.append(newNode)
+                        ant[j].instances.append(tmp)
+                        ant[j].AFT_Dic[curTask.id] = newNode["AFT"]
 
-                ant[j].makeSpan = ant[j].solution[-2].AFT
-                ant[j].cost, ant[j].Utils = self.getSolutionCost()
-
-                if ant[j].cost < bestAnt.cost and ant[j].makeSpan <= deadline:
-                    bestAnt = ant[j].deepcopy()
-                    print("best ant: " + str(bestAnt.cost))
+                    ant[j].makeSpan = ant[j].solution[-1]["AFT"]
+                    ant[j].cost, ant[j].Utils = self.getSolutionCost()
 
 
-                self.localUpdate()
-                self.environment._instances.resetPerAnt()
-                self.environment.problemNodeList = self.resetProblemNodeList()
-                self.resetNodes()
-                return
+                    if ant[j].cost < bestAnt.cost and ant[j].makeSpan <= deadline:
+                        bestAnt.solution = ant[j].solution
+                        bestAnt.cost = ant[j].cost
+                        bestAnt.Utils = ant[j].Utils
+                        bestAnt.makeSpan = ant[j].makeSpan
+                        print("best ant: " + str(bestAnt.cost))
+
+
+                    ant[j].solution = []
+                    self.localUpdate()
+                    self.environment._instances.resetPerAnt()
+                    self.environment.problemNodeList = self.resetProblemNodeList()
+                    lock.release()
+
+                executor.map(run_ant, range(self.nAnt))
 
             self.updatePheromone(bestAnt)
 
