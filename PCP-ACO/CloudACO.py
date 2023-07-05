@@ -194,10 +194,13 @@ class CloudACO:
 
     def resetProblemNodeList(self):
         problemNodeList = []
-        mId = 0
 
         for instance in self.environment._instances.instances:
-            problemNodeList.append(instance)
+            tmp = {"PERIOD_DURATION": 3600, "instanceId": instance["instanceId"], "resource": instance["resource"], "currentTask": None,
+                   "currentTaskDuration": 0, "totalDuration": 0, "totaltime": 0, "processedTasks": [],
+                   "processedTasksIds": set(), "currentStartTime": 0, "instanceFinishTime": 0.0, "totalCost": 0,
+                   "instanceStartTime": None, "taskStart": 0}
+            problemNodeList.append(tmp)
 
         return problemNodeList
 
@@ -253,7 +256,7 @@ class CloudACO:
                     newTaskDuration = round(curTask.instructionSize / dest["resource"].MIPS)
                     countOfHoursToProvision = max(int(ceil(
                         (newTaskDuration - max(dest["instanceFinishTime"] - curTask.EST, 0)) / (
-                                    self.PERIOD_DURATION * 1.0))), 0)
+                                    self.PERIOD_DURATION))), 0)
                     addedTimeToProvision = (countOfHoursToProvision * self.PERIOD_DURATION)
 
                     if dest["currentTask"] is None:
@@ -280,8 +283,8 @@ class CloudACO:
                     else:
                         remain = dest["instanceFinishTime"] - dest["totalDuration"]
                         countOfHoursToProvision = max(
-                            int(round((newTaskDuration - remain) / float(self.PERIOD_DURATION))), 0)
-                        addedTimeToProvision = (countOfHoursToProvision * self.PERIOD_DURATION)
+                            int(round((newTaskDuration - remain) / self.PERIOD_DURATION)), 0)
+                        addedTimeToProvision = countOfHoursToProvision * self.PERIOD_DURATION
                         dest["instanceFinishTime"] += addedTimeToProvision
                         dest["taskStart"] = max(ant[j].finished[curTask.id], dest["currentStartTime"])
                         dest["currentStartTime"] = round(dest["taskStart"] + newTaskDuration)
@@ -316,7 +319,7 @@ class CloudACO:
                 self.localUpdate()
                 # self.environment._instances.resetPerAnt()
                 ant[j].problemNodeList = self.resetProblemNodeList()
-            return
+
             self.updatePheromone(bestAnt)
 
 
