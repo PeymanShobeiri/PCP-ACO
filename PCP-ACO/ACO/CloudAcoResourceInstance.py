@@ -94,9 +94,9 @@ class CloudAcoResourceInstance:
             self.currentTask = node
             self.totalCost += countOfHoursToProvision * self.resource.costPerInterval
 
-            if cloudAcoProblemNode.instanceId + 1 != env._graph.maxParallel and not cloudAcoProblemNode.getInstanceId() + 1 >= env._graph.maxParallel * env._resources.size:
+            if cloudAcoProblemNode.instanceId + 1 != env._graph.maxParallel and not cloudAcoProblemNode.instanceId + 1 >= env._graph.maxParallel * env._resources.size:
                 newinst = CloudAcoResourceInstance(cloudAcoProblemNode.resource, cloudAcoProblemNode.instanceId + 1)
-                env.problemNodeList.append(newinst)
+                ant.problemNodeList.append(newinst)
 
         else:
             remain = self.instanceFinishTime - self.totalDuration
