@@ -11,7 +11,6 @@ import copy
 import time
 
 lock = Lock()
-
 class CloudACO:
 
     def __init__(self):
@@ -36,7 +35,7 @@ class CloudACO:
         duration = float(parent.getDataSize()) / (Constants.BANDWIDTH * 1.0)
         return round(duration)
 
-    def calculateHeuristic(self, candidateNodes, curtask):
+    def calculateHeuristic(self, candidateNodes, curtask, finished):
 
         best = -1
         bestIndex = -1
@@ -46,7 +45,7 @@ class CloudACO:
 
             curCost = candidateNodes[i].getCost(currentDuration)
 
-            currentST = max(candidateNodes[i].currentStartTime, self.finished[curtask.id])
+            currentST = max(candidateNodes[i].currentStartTime, finished[curtask.id])
             currentFT = currentST + currentDuration
 
             hc = self.HeuristicCondition(currentDuration, curCost, currentST, candidateNodes[i].instanceId, curtask.subDeadline)
@@ -132,8 +131,8 @@ class CloudACO:
 
         return node
 
-    def getSolutionCost(self):
-        tmp = self.environment.problemNodeList
+    def getSolutionCost(self, tmp):
+        # tmp = self.environment.problemNodeList
         usedTime = 0
         totalTime = 0
         result = 0
@@ -172,8 +171,8 @@ class CloudACO:
         empty_ant.cost = 0.0
         empty_ant.makeSpan = 0.0
         empty_ant.Utils = 0.0
-        empty_ant.AFT_Dic = {}
-        empty_ant.instances = []
+        empty_ant.problemNodeList = copy.deepcopy(self.environment.problemNodeList)
+        empty_ant.finished = {"start": 0, "end": deadline}
 
         # Best solution ever found
         bestAnt = empty_ant.deepcopy()
@@ -190,56 +189,53 @@ class CloudACO:
         self.probability = np.full(environment._resources.size * environment._graph.maxParallel, 0.0)
 
         # Create the finished dictionary
-        self.finished = {"start": 0, "end": deadline}
+        # self.finished = {"start": 0, "end": deadline}
 
         # ACO main loop
         for it in range(self.MaxIt):
             # Move Ants
             with ThreadPoolExecutor(max_workers=self.nAnt) as executor:
                 def run_ant(j):
-                    lock.acquire()
-                    ant[j].AFT_Dic = {'start': 0}
+                    AFT_Dic = {'start': 0}
                     for k in range(1, environment._graph.nodeNum - 1):
                         curTask = environment.sortedWorkflowNodes[k]
-                        candidateNodes = environment.problemNodeList
+                        candidateNodes = ant[j].problemNodeList
 
                         # A matrix for finish times for each node
                         mx = 0
                         for parent in curTask.parents:
-                            if ant[j].AFT_Dic[parent.id] > mx:
-                                mx = ant[j].AFT_Dic[parent.id]
-                        self.finished[curTask.id] = mx
+                            if AFT_Dic[parent.id] > mx:
+                                mx = AFT_Dic[parent.id]
+                        ant[j].finished[curTask.id] = mx
 
-                        bestOptionByProbability = self.calculateHeuristic(candidateNodes, curTask)
+                        bestOptionByProbability = self.calculateHeuristic(candidateNodes, curTask, ant[j].finished)
 
                         if random.random() < self.Q0:
                             dest = candidateNodes[bestOptionByProbability]
                         else:
                             dest = self.rwsSelection(candidateNodes, self.probability)
 
-                        newNode, tmp = dest.setCurrentTask(dest, environment, curTask, self.finished, ant[j])
+                        newNode = dest.setCurrentTask(dest, environment, curTask, ant[j].finished, ant[j])
 
                         ant[j].solution.append(newNode)
-                        ant[j].instances.append(tmp)
-                        ant[j].AFT_Dic[curTask.id] = newNode["AFT"]
+                        AFT_Dic[curTask.id] = newNode["AFT"]
 
                     ant[j].makeSpan = ant[j].solution[-1]["AFT"]
-                    ant[j].cost, ant[j].Utils = self.getSolutionCost()
+                    ant[j].cost, ant[j].Utils = self.getSolutionCost(ant[j].problemNodeList)
 
-
+                    lock.acquire()
                     if ant[j].cost < bestAnt.cost and ant[j].makeSpan <= deadline:
                         bestAnt.solution = ant[j].solution
                         bestAnt.cost = ant[j].cost
                         bestAnt.Utils = ant[j].Utils
                         bestAnt.makeSpan = ant[j].makeSpan
                         print("best ant: " + str(bestAnt.cost))
-
+                    lock.release()
 
                     ant[j].solution = []
                     self.localUpdate()
                     self.environment._instances.resetPerAnt()
-                    self.environment.problemNodeList = self.resetProblemNodeList()
-                    lock.release()
+                    ant[j].problemNodeList = self.resetProblemNodeList()
 
                 executor.map(run_ant, range(self.nAnt))
 

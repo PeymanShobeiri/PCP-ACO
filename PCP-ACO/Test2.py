@@ -30,7 +30,7 @@ def computeCheapest(wfFile, startTime, deadline):
     return MC
 
 
-workflowPath = "../Workflows/Montage_25.xml"
+workflowPath = "/Users/apple/Desktop/make_fast/Workflows/Montage_25.xml"
 startTime = 0
 MH = computeFastest(workflowPath, startTime, 1000)
 deadline_factor = 1.5
