@@ -88,8 +88,6 @@ class CloudACO:
 
                 maxCost = 20
                 minCost = 0.8
-                fastest = curtask.instructionSize / self.environment._instances.instances[0]["resource"].MIPS
-                slowest = curtask.instructionSize / self.environment._instances.instances[-1]["resource"].MIPS
 
                 h2 = ((maxCost - curCost + 1) / (maxCost - minCost + 1))
 
@@ -165,6 +163,81 @@ class CloudACO:
 
         return problemNodeList
 
+    def run_ant(self, ant):
+
+        AFT_Dic = {'start': 0}
+        for k in range(1, self.environment._graph.nodeNum - 1):
+            probability = []
+            curTask = self.environment.sortedWorkflowNodes[k]
+            candidateNodes = ant.problemNodeList
+
+            # A matrix for finish times for each node
+            mx = 0
+            for parent in curTask.parents:
+                if AFT_Dic[parent.id] > mx:
+                    mx = AFT_Dic[parent.id]
+            ant.finished[curTask.id] = mx
+
+            bestOptionByProbability = self.calculateHeuristic(candidateNodes, curTask, ant.finished, probability)
+
+            if random.random() < self.Q0:
+                dest = candidateNodes[bestOptionByProbability]
+            else:
+                dest = self.rwsSelection(candidateNodes, probability)
+
+            newTaskDuration = round(curTask.instructionSize / dest["resource"].MIPS)
+            countOfHoursToProvision = max(int(ceil(
+                (newTaskDuration - max(dest["instanceFinishTime"] - curTask.EST, 0)) / (
+                    self.PERIOD_DURATION))), 0)
+            addedTimeToProvision = countOfHoursToProvision * self.PERIOD_DURATION
+
+            if dest["currentTask"] is None:
+                dest["instanceStartTime"] = ant.finished[curTask.id]
+                dest["taskStart"] = ant.finished[curTask.id]
+                dest["instanceFinishTime"] = addedTimeToProvision
+                dest["currentStartTime"] = round(ant.finished[curTask.id] + newTaskDuration)
+                dest["currentTaskDuration"] = newTaskDuration
+                dest["totalDuration"] += newTaskDuration
+                dest["totaltime"] = countOfHoursToProvision
+                dest["currentTask"] = curTask
+                dest["totalCost"] += countOfHoursToProvision * dest["resource"].costPerInterval
+
+                if dest["instanceId"] + 1 != self.environment._graph.maxParallel and not dest[
+                                                                                             "instanceId"] + 1 >= self.environment._graph.maxParallel * self.environment._resources.size:
+                    newinst = {"instanceId": dest["instanceId"] + 1,
+                               "resource": dest["resource"], "currentTask": None,
+                               "currentTaskDuration": 0, "totalDuration": 0, "totaltime": 0,
+                               "processedTasks": [],
+                               "processedTasksIds": set(), "currentStartTime": 0, "instanceFinishTime": 0.0,
+                               "totalCost": 0,
+                               "instanceStartTime": None, "taskStart": 0}
+                    ant.problemNodeList.append(newinst)
+
+            else:
+                remain = dest["instanceFinishTime"] - dest["totalDuration"]
+                countOfHoursToProvision = max(
+                    int(round((newTaskDuration - remain) / self.PERIOD_DURATION)), 0)
+                addedTimeToProvision = countOfHoursToProvision * self.PERIOD_DURATION
+                dest["instanceFinishTime"] += addedTimeToProvision
+                dest["taskStart"] = max(ant.finished[curTask.id], dest["currentStartTime"])
+                dest["currentStartTime"] = round(dest["taskStart"] + newTaskDuration)
+                dest["currentTaskDuration"] = newTaskDuration
+                dest["totalDuration"] += newTaskDuration
+                dest["totaltime"] += countOfHoursToProvision
+                dest["currentTask"] = curTask
+                dest["totalCost"] += countOfHoursToProvision * dest["resource"].costPerInterval
+
+            antNode = {"id": curTask.id, "AST": int(round(dest["taskStart"])),
+                       "AFT": int(round(dest["taskStart"] + newTaskDuration)), "runTime": newTaskDuration,
+                       "selectedInstance": dest["instanceId"], "LFT": curTask.LFT}
+
+            dest["processedTasksIds"].add(curTask.id)
+
+            ant.solution.append(antNode)
+            AFT_Dic[curTask.id] = antNode["AFT"]
+            # self.probability = []
+        return ant
+
     def schedule(self, environment, deadline):
         self.environment = environment
         # Empty Ant
@@ -187,103 +260,32 @@ class CloudACO:
         ant = empty_ant.repeat(self.nAnt)
 
         # Phromone Matrix
-        self.pheromone = np.full((environment._graph.nodeNum + 2, environment._resources.size * environment._graph.maxParallel), 0.04)
+        self.pheromone = np.full((self.environment._graph.nodeNum + 2, self.environment._resources.size * self.environment._graph.maxParallel), 0.04)
 
         # ACO main loop
         for it in range(self.MaxIt):
             # Move Ants
             with ThreadPoolExecutor(max_workers=self.nAnt) as executor:
-                def run_ant(j):
+                futures = [executor.submit(self.run_ant, ant[j]) for j in range(self.nAnt)]
+                ants = [future.result() for future in futures]
 
-                    AFT_Dic = {'start': 0}
-                    for k in range(1, environment._graph.nodeNum - 1):
-                        probability = []
-                        curTask = environment.sortedWorkflowNodes[k]
-                        candidateNodes = ant[j].problemNodeList
+            for at in ants:
+                at.makeSpan = at.solution[-1]["AFT"]
+                at.cost, at.Utils = self.getSolutionCost(at.problemNodeList)
 
-                        # A matrix for finish times for each node
-                        mx = 0
-                        for parent in curTask.parents:
-                            if AFT_Dic[parent.id] > mx:
-                                mx = AFT_Dic[parent.id]
-                        ant[j].finished[curTask.id] = mx
+                if at.cost < bestAnt.cost and at.makeSpan <= deadline:
+                    bestAnt.solution = at.solution
+                    bestAnt.cost = at.cost
+                    bestAnt.Utils = at.Utils
+                    bestAnt.makeSpan = at.makeSpan
+                    print("best ant: " + str(bestAnt.cost))
 
-                        bestOptionByProbability = self.calculateHeuristic(candidateNodes, curTask, ant[j].finished, probability)
-
-                        if random.random() < self.Q0:
-                            dest = candidateNodes[bestOptionByProbability]
-                        else:
-                            dest = self.rwsSelection(candidateNodes, probability)
-
-                        newTaskDuration = round(curTask.instructionSize / dest["resource"].MIPS)
-                        countOfHoursToProvision = max(int(ceil(
-                            (newTaskDuration - max(dest["instanceFinishTime"] - curTask.EST, 0)) / (
-                                self.PERIOD_DURATION))), 0)
-                        addedTimeToProvision = countOfHoursToProvision * self.PERIOD_DURATION
-
-                        if dest["currentTask"] is None:
-                            dest["instanceStartTime"] = ant[j].finished[curTask.id]
-                            dest["taskStart"] = ant[j].finished[curTask.id]
-                            dest["instanceFinishTime"] = addedTimeToProvision
-                            dest["currentStartTime"] = round(ant[j].finished[curTask.id] + newTaskDuration)
-                            dest["currentTaskDuration"] = newTaskDuration
-                            dest["totalDuration"] += newTaskDuration
-                            dest["totaltime"] = countOfHoursToProvision
-                            dest["currentTask"] = curTask
-                            dest["totalCost"] += countOfHoursToProvision * dest["resource"].costPerInterval
-
-                            if dest["instanceId"] + 1 != environment._graph.maxParallel and not dest[
-                                                                                                    "instanceId"] + 1 >= environment._graph.maxParallel * environment._resources.size:
-                                newinst = {"instanceId": dest["instanceId"] + 1,
-                                           "resource": dest["resource"], "currentTask": None,
-                                           "currentTaskDuration": 0, "totalDuration": 0, "totaltime": 0,
-                                           "processedTasks": [],
-                                           "processedTasksIds": set(), "currentStartTime": 0, "instanceFinishTime": 0.0,
-                                           "totalCost": 0,
-                                           "instanceStartTime": None, "taskStart": 0}
-                                ant[j].problemNodeList.append(newinst)
-
-                        else:
-                            remain = dest["instanceFinishTime"] - dest["totalDuration"]
-                            countOfHoursToProvision = max(
-                                int(round((newTaskDuration - remain) / self.PERIOD_DURATION)), 0)
-                            addedTimeToProvision = countOfHoursToProvision * self.PERIOD_DURATION
-                            dest["instanceFinishTime"] += addedTimeToProvision
-                            dest["taskStart"] = max(ant[j].finished[curTask.id], dest["currentStartTime"])
-                            dest["currentStartTime"] = round(dest["taskStart"] + newTaskDuration)
-                            dest["currentTaskDuration"] = newTaskDuration
-                            dest["totalDuration"] += newTaskDuration
-                            dest["totaltime"] += countOfHoursToProvision
-                            dest["currentTask"] = curTask
-                            dest["totalCost"] += countOfHoursToProvision * dest["resource"].costPerInterval
-
-                        antNode = {"id": curTask.id, "AST": int(round(dest["taskStart"])),
-                                   "AFT": int(round(dest["taskStart"] + newTaskDuration)), "runTime": newTaskDuration,
-                                   "selectedInstance": dest["instanceId"], "LFT": curTask.LFT}
-
-                        dest["processedTasksIds"].add(curTask.id)
-
-                        ant[j].solution.append(antNode)
-                        AFT_Dic[curTask.id] = antNode["AFT"]
-                        # self.probability = []
-
-                    ant[j].makeSpan = ant[j].solution[-1]["AFT"]
-                    ant[j].cost, ant[j].Utils = self.getSolutionCost(ant[j].problemNodeList)
-
-                    if ant[j].cost < bestAnt.cost and ant[j].makeSpan <= deadline:
-                        bestAnt.solution = ant[j].solution
-                        bestAnt.cost = ant[j].cost
-                        bestAnt.Utils = ant[j].Utils
-                        bestAnt.makeSpan = ant[j].makeSpan
-                        print("best ant: " + str(bestAnt.cost))
-
-                    ant[j].solution = []
-                    self.localUpdate()
-                    ant[j].problemNodeList = self.resetProblemNodeList()
-
-                executor.map(run_ant, range(self.nAnt))
+                at.solution = []
+                self.localUpdate()
+                at.problemNodeList = self.resetProblemNodeList()
 
             self.updatePheromone(bestAnt)
+            return
 
         return bestAnt
 
