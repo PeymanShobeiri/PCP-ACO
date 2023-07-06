@@ -43,10 +43,9 @@ try:
     wb = WorkflowBroker(workflowPath, "PCP_ACO")
 
     # Scheduling using PCP_ACO
-    Start_Time = round(time.time())
+
     out = wb.schedule(startTime, deadline)
-    Finish_Time = round(time.time())
-    print(" The total time is : " + str(Finish_Time - Start_Time))
+
 
 except Exception as e:
     print("Error ?!!" + '  ' + str(e))
