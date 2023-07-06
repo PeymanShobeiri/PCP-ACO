@@ -9,13 +9,11 @@ class CloudAcoResourceInstanceSet:
         coef = 1
         for j in range(resources.getSize()):
             resource = resources.getResource(j)
-            tmp = {"PERIOD_DURATION": 3600, "instanceId": id, "resource": resource, "currentTask": None,
-                   "currentTaskDuration": 0, "totalDuration": 0, "totaltime": 0, "processedTasks": [],
-                   "processedTasksIds": set(), "currentStartTime": 0, "instanceFinishTime": 0.0, "totalCost": 0,
-                   "instanceStartTime": None, "taskStart": 0}
+            # instances = []
+            instances = CloudAcoResourceInstance(resource, id)
             id = coef * count
             coef += 1
-            self.instances.append(tmp)
+            self.instances.append(instances)
 
     def __init__(self, resources, count):
 
