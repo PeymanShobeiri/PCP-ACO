@@ -9,7 +9,7 @@ class CloudAcoResourceInstanceSet:
         coef = 1
         for j in range(resources.getSize()):
             resource = resources.getResource(j)
-            tmp = {"PERIOD_DURATION": 3600, "instanceId": id, "resource": resource, "currentTask": None,
+            tmp = {"instanceId": id, "resource": resource, "currentTask": None,
                    "currentTaskDuration": 0, "totalDuration": 0, "totaltime": 0, "processedTasks": [],
                    "processedTasksIds": set(), "currentStartTime": 0, "instanceFinishTime": 0.0, "totalCost": 0,
                    "instanceStartTime": None, "taskStart": 0}

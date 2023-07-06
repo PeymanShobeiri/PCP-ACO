@@ -16,17 +16,13 @@ class CloudACO:
         # ACO Parameters
         self.MaxIt = 200
         self.nAnt = 5
-        self.H_RATIO = 3
+        self.H_RATIO = 2
         self.P_RATIO = 1
         self.EVAP_RATIO = 0.1
         self.Q0 = 0.8
         self.PERIOD_DURATION = 3600
 
         self.pheromone = None
-        self.heuristic = None
-        # self.probability = []
-        self.h_matrix = None
-        self.finished = None
         self.environment = None
         self.heuristicCache = {}
 
@@ -90,42 +86,10 @@ class CloudACO:
                             (curtask.LFT - curtask.subDeadline) + 1)))
                     bad = True
 
-                maxCost = -1
-                minCost = np.inf
-                fastest = np.inf
-                slowest = 0
-                temp = 0.0
-                tempDuration = 0.0
-
-                for instance in self.environment._instances.instances:
-                    tempDuration = round(curtask.instructionSize / instance["resource"].MIPS)
-
-                    countOfHoursToProvision = int(ceil(tempDuration / self.PERIOD_DURATION))
-
-                    if countOfHoursToProvision == 0:
-                        countOfHoursToProvision = 1
-
-                    if instance["currentTask"] is None:
-                        temp = instance["resource"].costPerInterval * countOfHoursToProvision
-                    else:
-                        if tempDuration <= instance["instanceFinishTime"] - instance["totalDuration"]:
-                            temp = 0
-                        else:
-                            lack = tempDuration - instance["instanceFinishTime"] - instance["totalDuration"]
-                            countOfHoursToProvision = int(ceil(lack / self.PERIOD_DURATION))
-                            temp = countOfHoursToProvision * instance["resource"].costPerInterval
-
-                    # temp = instance.getCost(tempDuration)
-
-                    if temp > maxCost:
-                        maxCost = temp
-                    if temp < minCost:
-                        minCost = temp
-
-                    if tempDuration > slowest:
-                        slowest = tempDuration
-                    if tempDuration < fastest:
-                        fastest = tempDuration
+                maxCost = 20
+                minCost = 0.8
+                fastest = curtask.instructionSize / self.environment._instances.instances[0]["resource"].MIPS
+                slowest = curtask.instructionSize / self.environment._instances.instances[-1]["resource"].MIPS
 
                 h2 = ((maxCost - curCost + 1) / (maxCost - minCost + 1))
 
@@ -186,7 +150,7 @@ class CloudACO:
                     int(sol["id"].split("ID")[1])][sol["selectedInstance"]]) * (1 - self.EVAP_RATIO)) + value
 
     def localUpdate(self):
-        self.pheromone = (1 - self.EVAP_RATIO) * self.pheromone + (self.EVAP_RATIO * 0.04) + 0.001  # + 0.02
+        self.pheromone = (1 - self.EVAP_RATIO) * self.pheromone + (self.EVAP_RATIO * 0.04) + 0.001
 
     def resetProblemNodeList(self):
         problemNodeList = []
@@ -209,7 +173,7 @@ class CloudACO:
         empty_ant.cost = 0.0
         empty_ant.makeSpan = 0.0
         empty_ant.Utils = 0.0
-        empty_ant.problemNodeList = copy.deepcopy(self.environment.problemNodeList)
+        empty_ant.problemNodeList = self.environment.problemNodeList
         empty_ant.finished = {"start": 0, "end": deadline}
 
         # Best solution ever found
@@ -223,8 +187,7 @@ class CloudACO:
         ant = empty_ant.repeat(self.nAnt)
 
         # Phromone Matrix
-        self.pheromone = np.full(
-            (environment._graph.nodeNum + 3, environment._resources.size * environment._graph.maxParallel), 0.04)
+        self.pheromone = np.full((environment._graph.nodeNum + 2, environment._resources.size * environment._graph.maxParallel), 0.04)
 
         # ACO main loop
         for it in range(self.MaxIt):
@@ -256,7 +219,7 @@ class CloudACO:
                         countOfHoursToProvision = max(int(ceil(
                             (newTaskDuration - max(dest["instanceFinishTime"] - curTask.EST, 0)) / (
                                 self.PERIOD_DURATION))), 0)
-                        addedTimeToProvision = (countOfHoursToProvision * self.PERIOD_DURATION)
+                        addedTimeToProvision = countOfHoursToProvision * self.PERIOD_DURATION
 
                         if dest["currentTask"] is None:
                             dest["instanceStartTime"] = ant[j].finished[curTask.id]
@@ -271,7 +234,7 @@ class CloudACO:
 
                             if dest["instanceId"] + 1 != environment._graph.maxParallel and not dest[
                                                                                                     "instanceId"] + 1 >= environment._graph.maxParallel * environment._resources.size:
-                                newinst = {"PERIOD_DURATION": 3600, "instanceId": dest["instanceId"] + 1,
+                                newinst = {"instanceId": dest["instanceId"] + 1,
                                            "resource": dest["resource"], "currentTask": None,
                                            "currentTaskDuration": 0, "totalDuration": 0, "totaltime": 0,
                                            "processedTasks": [],
@@ -331,18 +294,6 @@ class CloudACO:
             self.__curStartTime = curStartTime
             self.__instanceId = instanceId
             self.__sd = sd
-
-        def getCurDuration(self):
-            return self.__curDuration
-
-        def setCurDuration(self, curDuration):
-            self.__curDuration = curDuration
-
-        def getCurCost(self):
-            return self.__curCost
-
-        def setCurCost(self, curCost):
-            self.__curCost = curCost
 
         def __eq__(self, other):
             if other.__curDuration == self.__curDuration and other.__curCost == self.__curCost and other.__curStartTime == self.__curStartTime and other.__instanceId == self.__instanceId:
