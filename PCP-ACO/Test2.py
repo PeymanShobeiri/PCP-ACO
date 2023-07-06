@@ -44,7 +44,7 @@ try:
 
     # Scheduling using PCP_ACO
 
-    out = wb.schedule(startTime, deadline)
+    wb.schedule(startTime, deadline)
 
 
 except Exception as e:

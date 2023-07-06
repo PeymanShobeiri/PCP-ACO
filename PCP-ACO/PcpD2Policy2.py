@@ -5,6 +5,7 @@ from WorkflowPolicy import WorkflowPolicy
 from Instance import Instance
 from WorkflowNode import WorkflowNode
 from math import ceil, floor
+from prettytable import PrettyTable
 import time
 import sys
 
@@ -119,6 +120,18 @@ class PcpD2Policy2(WorkflowPolicy):
         endNode.setEST(endTime)
         endNode.setEFT(endTime)
 
+    def saveSolution(self, best):
+        myTable = PrettyTable(["N", "I", "AST", "runtime", "AFT", "LFT"])
+        for node in best.solution:
+            if node is None:
+                continue
+
+            myTable.add_row([str(node["id"]), str(node["selectedInstance"]),
+                             str(node["AST"]),
+                             str(node["runTime"]), str(node["AFT"]),
+                             str(node["LFT"])])
+        print(myTable)
+
     def schedule(self, startTime, deadline):
         cost = None
 
@@ -139,11 +152,9 @@ class PcpD2Policy2(WorkflowPolicy):
         # Create cloud ACO instance for running the ACO in order to find the best resource for each node
         cloudACO = CloudACO()
         Start_Time = round(time.time())
-        cloudACO.schedule(self, deadline)
+        best = cloudACO.schedule(self, deadline)
         Finish_Time = round(time.time())
         print(" The total time is : " + str(Finish_Time - Start_Time))
 
+        self.saveSolution(best)
 
-        # self.setEndNodeEST()
-        # cost = super().computeFinalCost()
-        return cost
