@@ -12,6 +12,7 @@ lock = Lock()
 
 class CloudACO:
 
+
     def __init__(self):
         # ACO Parameters
         self.MaxIt = 200
@@ -26,9 +27,11 @@ class CloudACO:
         self.environment = None
         self.heuristicCache = {}
 
+
     def getBandwidthDuration(self, node, parent):
         duration = (parent.getDataSize()) / (Constants.BANDWIDTH * 1.0)
         return round(duration)
+
 
     def calculateHeuristic(self, candidateNodes, curtask, finished, probability):
 
@@ -128,7 +131,9 @@ class CloudACO:
 
         return node
 
+
     def getSolutionCost(self, tmp):
+
         usedTime = 0
         totalTime = 0
         result = 0
@@ -146,6 +151,7 @@ class CloudACO:
             for sol in bestAnt.solution:
                 self.pheromone[int(sol["id"].split("ID")[1])][sol["selectedInstance"]] = ((self.pheromone[
                     int(sol["id"].split("ID")[1])][sol["selectedInstance"]]) * (1 - self.EVAP_RATIO)) + value
+
 
     def localUpdate(self):
         self.pheromone = (1 - self.EVAP_RATIO) * self.pheromone + (self.EVAP_RATIO * 0.04) + 0.001
@@ -290,6 +296,7 @@ class CloudACO:
         return bestAnt
 
     class HeuristicCondition:
+
         def __init__(self, curDuration, curCost, curStartTime, instanceId, sd):
             self.__curDuration = curDuration
             self.__curCost = curCost
