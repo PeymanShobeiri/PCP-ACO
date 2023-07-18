@@ -1,11 +1,11 @@
 from math import floor
 from unittest import removeResult
 from numpy import outer
-from ..setting.Solution import Solution
-from ..setting.Task import Task
-from ..setting.VM import VM
-from . import Scheduler
-from ..setting.Workflow import Workflow
+from setting.Solution import Solution
+from setting.Task import Task
+from setting.VM import VM
+# from import Scheduler
+from setting.Workflow import Workflow
 import random
 import zope
 

@@ -25,7 +25,7 @@ class CloudACO:
         self.__P_RATIO = 1
         self.__EVAP_RATIO = 0.1
         self.__Q0 = 0.8
-        self.__iterCount = 500
+        self.__iterCount = 400
         self.__antCount = 10
         self.__pheromone = None
         self.__heuristic = []
@@ -73,8 +73,6 @@ class CloudACO:
                         0)
         currentFT = currentST + currentDuration
 
-        if curCost == 0:
-            print("ssss")
         hc = self.HeuristicCondition(currentDuration, curCost, currentST, destination.getResource().getId(),
                                      task.getDeadline())
 
@@ -177,10 +175,17 @@ class CloudACO:
 
     def getSolutionCost(self):
         tmp = self.__environment.getProblemGraph().getProblemNodeList()
+        usedTime = 0
+        totalTime = 0
         result = 0
         for inst in tmp:
             result += inst.getTotalCost()
-        return result
+            if inst.getTotalCost() != 0:
+                usedTime += inst.totalDuration
+                totalTime += inst.totaltime
+        # print(usedTime/(totalTime * 3600))
+        t = usedTime/(totalTime * 3600)
+        return result, t
 
     def releasePheromone(self, bestAnt):
         if bestAnt.solutionCost != 0:
@@ -220,21 +225,21 @@ class CloudACO:
         end = currentAnt.solution[len(currentAnt.solution) - 2]
         currentAnt.makeSpan = end.getAFT()
 
-        currentAnt.solutionCost = self.getSolutionCost()  
+        currentAnt.solutionCost, currentAnt.Utils = self.getSolutionCost()
 
-        with lock2:
-            if self.__bestAnt.id is None and currentAnt.makeSpan <= self.deadline:
-                self.__bestAnt = copy.deepcopy(currentAnt)
-                print("best ant: " + str(self.__bestAnt.solutionCost))
+        # with lock2:
+        if self.__bestAnt.id is None and currentAnt.makeSpan <= self.deadline:
+            self.__bestAnt = copy.deepcopy(currentAnt)
+            print("best ant: " + str(self.__bestAnt.solutionCost))
 
-            elif currentAnt.solutionCost < self.__bestAnt.solutionCost and currentAnt.makeSpan <= self.deadline:
-                self.__bestAnt = copy.deepcopy(currentAnt)
-                print("best ant: " + str(self.__bestAnt.solutionCost))
+        elif currentAnt.solutionCost < self.__bestAnt.solutionCost and currentAnt.makeSpan <= self.deadline:
+            self.__bestAnt = copy.deepcopy(currentAnt)
+            print("best ant: " + str(self.__bestAnt.solutionCost))
 
-            self.localUpdate()
-            self.__environment.getProblemGraph().getInstanceSet().resetPerAnt()
-            self.__environment.getProblemGraph().resetProblemNodeList()
-            self.__environment.getProblemGraph().resetNodes()
+        self.localUpdate()
+        self.__environment.getProblemGraph().getInstanceSet().resetPerAnt()
+        self.__environment.getProblemGraph().resetProblemNodeList()
+        self.__environment.getProblemGraph().resetNodes()
 
     def schedule(self, environment, deadline):
         global globalAnt
@@ -256,8 +261,8 @@ class CloudACO:
 
             itr += 1
 
-        print("best ant best: " + str(self.__bestAnt.solutionCost))
-        self.__bestAnt.saveSolution()
+        print("best ant utils is : " + str(self.__bestAnt.Utils))
+        # self.__bestAnt.saveSolution()
         return self.__bestAnt.solutionCost
 
     class Ant:
@@ -265,9 +270,10 @@ class CloudACO:
 
             self.isCompleted = False
             self.id = id
-            self.solution = []
-            for _ in range(size):
-                self.solution.append(None)
+            self.solution = [None]*size
+            self.Utils = 0
+            # for _ in range(size):
+            #     self.solution.append(None)
             self.solutionString = ""
             self.solutionCost = 0.0
             self.makeSpan = 0.0
