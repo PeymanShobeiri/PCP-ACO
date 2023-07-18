@@ -9,15 +9,15 @@ class CheapestPolicy(WorkflowPolicy):
     def __init__(self, g, rs, bw):
         super().__init__(g, rs, bw)
 
-    def schedule(self, startTime, deadline):
+    def schedule(self, startTime, deadline, IC_PCP):
         minMIPS = self._resources.getMinMIPS()
         minCost = self._resources.getMinCost()
         totalCost = 0.0
         totalTime = 0
 
         for curNode in self._graph.getNodes().values():
-            totalTime += round(float(curNode.getInstructionSize() / minMIPS))
+            totalTime += round(curNode.getInstructionSize() / minMIPS)
 
-        totalCost = float(ceil(float(totalTime) / float(self._resources.getInterval())) * minCost)
+        totalCost = ceil(totalTime / self._resources.getInterval()) * minCost
         self._graph.getNodes().get(self._graph.getEndId()).setAST(int(totalTime))
         return totalCost

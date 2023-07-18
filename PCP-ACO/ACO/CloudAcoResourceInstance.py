@@ -6,7 +6,6 @@ from ypstruct import structure
 
 class CloudAcoResourceInstance:
     def __init__(self, resource, id=None):
-
         self.PERIOD_DURATION = 3600
         self.instanceId = id
         self.resource = resource
@@ -27,9 +26,6 @@ class CloudAcoResourceInstance:
 
     def getPeriod(self):
         return self.PERIOD_DURATION
-
-    def getPeriod(self):
-        return self.__PERIOD_DURATION
 
     def getResource(self):
         return self.resource
@@ -79,7 +75,6 @@ class CloudAcoResourceInstance:
 
     def setCurrentTask(self, cloudAcoProblemNode, env, curt, finished, ant):
         node = curt
-
         if str(node.id).lower() == "start" or str(node.id).lower() == "end":
             return
 
@@ -129,7 +124,6 @@ class CloudAcoResourceInstance:
         self.processedTasksIds.add(node.id)
         return antNode
 
-
     def getTotalCost(self):
         return self.totalCost
 
@@ -150,7 +144,6 @@ class CloudAcoResourceInstance:
                 return countOfHoursToProvision * self.resource.getCost()
 
     def reset(self):
-
         self.totalCost = 0
         self.totalDuration = 0
         self.instanceStartTime = 0
@@ -161,7 +154,6 @@ class CloudAcoResourceInstance:
         self.currentStartTime = 0
         self.taskStart = 0
         self.processedTasksIds.clear()
-
 
     def getInstanceFinishTime(self):
         return self.instanceFinishTime

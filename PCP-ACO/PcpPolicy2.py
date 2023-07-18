@@ -174,6 +174,7 @@ class PcpPolicy2(WorkflowPolicy):
 
             curNode.setRunTime(int(curRuntime))
             curNode.setSelectedResource(curInst.getType().getId())
+            curNode.setSelectedInstance(curInst.getId())
             curNode.setScheduled()
             i += 1
 
@@ -227,8 +228,8 @@ class PcpPolicy2(WorkflowPolicy):
         bestInst = -1
 
         # check in the current instances that we reserved
-        for curInst in range(self._instances.getSize()):
-            cost = self.checkInstance(path, self._instances.getInstance(curInst))
+        for curInst in range(len(self._instances)):
+            cost = self.checkInstance(path, self._instances[curInst])
             if cost < bestCost:
                 bestCost = cost
                 bestInst = curInst
@@ -237,7 +238,7 @@ class PcpPolicy2(WorkflowPolicy):
         curRes = 0
         # launch a new instance
         while curRes < self._resources.getSize():
-            inst = Instance(self._instances.getSize(), self._resources.getResource(curRes))
+            inst = Instance(len(self._instances), self._resources.getResource(curRes))
             cost = self.checkInstance(path, inst)
             if cost < bestCost:
                 bestCost = cost
@@ -245,11 +246,12 @@ class PcpPolicy2(WorkflowPolicy):
             curRes += 1
 
         if bestInst < 10000:
-            self.setInstance(path, self._instances.getInstance(bestInst))
+            inst = Instance(len(self._instances), self._resources.getResource(0))
+            self.setInstance(path, inst)
         else:
             bestInst -= 10000
-            inst = Instance(self._instances.getSize(), self._resources.getResource(bestInst))
-            self._instances.addInstance(inst)
+            inst = Instance(len(self._instances), self._resources.getResource(bestInst))
+            self._instances.append(inst)
             self.setInstance(path, inst)
 
     def updateParentsLFT(self, childNode):
@@ -293,7 +295,7 @@ class PcpPolicy2(WorkflowPolicy):
 
                 if childNode.getLFT() < childNode.getEFT():
                     print(
-                        "EST Setting: ID=" + childNode.getId() + " EFT=" + childNode.getEFT() + " LFT=" + childNode.getLFT())
+                        "EST Setting: ID=" + str(childNode.getId()) + " EFT=" + str(childNode.getEFT()) + " LFT=" + str(childNode.getLFT()))
 
                 self.updateChildrenEST(childNode)
 
@@ -328,7 +330,7 @@ class PcpPolicy2(WorkflowPolicy):
 
         self.assignParents(curNode)
 
-    def schedule(self, startTime, deadline):
+    def schedule(self, startTime, deadline, IC_PCP):
         cost = None
 
         self.setRuntimes()
@@ -340,4 +342,8 @@ class PcpPolicy2(WorkflowPolicy):
 
         self.setEndNodeEST()
         cost = super().computeFinalCost()
-        return cost
+
+        UseInstances = {}
+        for node in self._graph.getNodes().values():
+            UseInstances[node.id] = self._resources.getResource(node.selectedResource).MIPS
+        return cost, UseInstances

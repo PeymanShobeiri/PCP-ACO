@@ -53,6 +53,8 @@ class PcpD2Policy2(WorkflowPolicy):
         i = 0
         while i <= len(path) - 1:
             curNode = path[i]
+            if float(pathEFT - pathEST) == 0:
+                pathEFT += 1
             subDeadline = pathEST + int(floor(float(curNode.getEFT() - pathEST) / float(pathEFT - pathEST) * PSD))
 
             curNode.setDeadline(subDeadline)
@@ -132,8 +134,9 @@ class PcpD2Policy2(WorkflowPolicy):
                              str(node["LFT"])])
         print(myTable)
 
-    def schedule(self, startTime, deadline):
+    def schedule(self, startTime, deadline, IC_PCP):
         cost = None
+        self.setRuntimes()
 
         self.computeESTandEFT(startTime)
         self.computeLSTandLFT(deadline)
@@ -152,9 +155,10 @@ class PcpD2Policy2(WorkflowPolicy):
         # Create cloud ACO instance for running the ACO in order to find the best resource for each node
         cloudACO = CloudACO()
         Start_Time = round(time.time())
-        best = cloudACO.schedule(self, deadline)
+        best = cloudACO.schedule(self, deadline, IC_PCP)
         Finish_Time = round(time.time())
         print(" The total time is : " + str(Finish_Time - Start_Time))
+        print("the Utils of best ant is : " + str(best.Utils))
 
         self.saveSolution(best)
 

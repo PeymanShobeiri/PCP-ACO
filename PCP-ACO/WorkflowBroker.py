@@ -15,17 +15,16 @@ class WorkflowBroker:
 
     def createResourceList(self):
         self.resources = ResourceSet(self.interval)
-
-        self.resources.addResource(Resource(0, 20, 100))
-        self.resources.addResource(Resource(1, 16.2, 90))
-        self.resources.addResource(Resource(2, 12.8, 80))
-        self.resources.addResource(Resource(3, 9.8, 70))
-        self.resources.addResource(Resource(4, 7.2, 60))
-        self.resources.addResource(Resource(5, 5, 50))
-        self.resources.addResource(Resource(6, 3.2, 40))
-        self.resources.addResource(Resource(7, 1.8, 30))
-        self.resources.addResource(Resource(8, 1.25, 25))
-        self.resources.addResource(Resource(9, 0.8, 20))
+        self.resources.addResource(Resource(0, 1, 500))
+        self.resources.addResource(Resource(1, 0.855, 450))
+        self.resources.addResource(Resource(2, 0.72, 400))
+        self.resources.addResource(Resource(3, 0.595, 350))
+        self.resources.addResource(Resource(4, 0.48, 300))
+        self.resources.addResource(Resource(5, 0.375, 250))
+        self.resources.addResource(Resource(6, 0.28, 200))
+        self.resources.addResource(Resource(7, 0.195, 150))
+        self.resources.addResource(Resource(8, 0.12, 100))
+        # self.resources.addResource(Resource(9, 0.8, 20))
         self.resources.sort()
 
     def __init__(self, wfDescFile, type):
@@ -54,9 +53,8 @@ class WorkflowBroker:
         elif type == "PCP_ACO":
             self.policy = PcpD2Policy2(self.graph, self.resources, self.bandwidth)
 
-
-    def schedule(self, startTime, deadline) -> float:
-        tmp = self.policy.schedule(startTime, deadline)
+    def schedule(self, startTime, deadline, ICPCP) -> float:
+        tmp = self.policy.schedule(startTime, deadline, ICPCP)
         return tmp
 
     def getGraph(self):

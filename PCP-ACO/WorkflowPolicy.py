@@ -9,13 +9,13 @@ class WorkflowPolicy:
     def __init__(self, g, rs, bw):
         self._graph = g
         self._resources = rs
-        self._instances = None
+        self._instances = []
         self._bandwidth = bw
 
     def setRuntimes(self):
         maxMIPS = self._resources.getMaxMIPS()
         for node in self._graph.getNodes().values():
-            node.setRunTime(round(node.getInstructionSize() / maxMIPS))
+            node.setRunTime(ceil(node.getInstructionSize() / maxMIPS))
 
     def computeLSTandLFT(self, deadline):
         candidateNodes = Queue()
@@ -34,7 +34,7 @@ class WorkflowPolicy:
             candidateNodes.put(parent.getId())
 
         while not candidateNodes.empty():
-            curNode = nodes.get(candidateNodes.get())  # shouldn't be get insted of remove ??
+            curNode = nodes.get(candidateNodes.get())
             minTime = sys.maxsize
             for child in curNode.getChildren():
                 childNode = nodes.get(child.getId())
@@ -79,7 +79,6 @@ class WorkflowPolicy:
         childNode = None
         level = 1
 
-        ############ testing for none + int error
         for node in nodes.values():
             node.setUnscheduled()
 
@@ -92,17 +91,14 @@ class WorkflowPolicy:
             candidateNodes.put(child.getId())
             nodes[child.getId()].setDAG_level(level)
 
-        while not candidateNodes.empty():  # maxtime and thistime needed to be decleard here ?
+        while not candidateNodes.empty():
             thisTime = 0.0
             maxTime = 0.0
             curNode = nodes.get(candidateNodes.get())
             maxTime = -1
             for parent in curNode.getParents():
                 parentNode = nodes.get(parent.getId())
-                thisTime = round(parentNode.getEST() + round(parent.getDataSize() / self._bandwidth))
-                # thisTime = parentNode.getEST() + round(float(parent.getDataSize() / self._bandwidth))
-                # je suis ici :)
-                thisTime += parentNode.getRunTime()
+                thisTime = round(parentNode.getEFT() + round(parent.getDataSize() / self._bandwidth))
                 if thisTime > maxTime:
                     maxTime = thisTime
 
@@ -150,7 +146,7 @@ class WorkflowPolicy:
                     maxTime = thisTime
 
             maxMIPS = self._resources.getMeanMIPS()
-            maxTime += round(float(curNode.getInstructionSize() / maxMIPS))
+            maxTime += ceil(float(curNode.getInstructionSize() / maxMIPS))
 
             if curNode.getId() == "start":
                 maxTime += 1
@@ -245,15 +241,15 @@ class WorkflowPolicy:
         totalCost = 0
         curCost = None
 
-        for instId in range(self._instances.getSize()):
-            inst = self._instances.getInstance(instId)
+        for instId in range(len(self._instances)):
+            inst = self._instances[instId]
 
             if inst.getFinishTime() == 0:
                 break
             first = self._graph.getNodes().get(inst.getFirstTask())
             last = self._graph.getNodes().get(inst.getLastTask())
             curCost = float(ceil(float((last.getEFT() - first.getEST())) / float(
-                self._resources.getInterval()))) * inst.getType().getCost()  # check the math here !!!
+                self._resources.getInterval()))) * inst.getType().getCost()
             totalCost += curCost
 
         return totalCost
