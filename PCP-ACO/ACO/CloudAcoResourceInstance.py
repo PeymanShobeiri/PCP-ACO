@@ -1,52 +1,58 @@
 from math import ceil
 from queue import Queue
 from Constants import Constants
+from ypstruct import structure
 
 
 class CloudAcoResourceInstance:
     def __init__(self, resource, id=None):
-        self.__PERIOD_DURATION = 3600
-        self.__instanceId = id
-        self.__resource = resource
-        self.__currentTask = None
-        self.__currentTaskDuration = 0
+
+        self.PERIOD_DURATION = 3600
+        self.instanceId = id
+        self.resource = resource
+        self.currentTask = None
+        self.currentTaskDuration = 0
         self.totalDuration = 0
         self.totaltime = 0
-        self.__processedTasks = []
-        self.__processedTasksIds = set()
-        self.__currentStartTime = 0
-        self.__instanceFinishTime = 0.0
-        self.__totalCost = 0
-        self.__instanceStartTime = None
+        self.processedTasks = []
+        self.processedTasksIds = set()
+        self.currentStartTime = 0
+        self.instanceFinishTime = 0.0
+        self.totalCost = 0
+        self.instanceStartTime = None
+        self.taskStart = 0
 
     def getPTI(self):
-        return len(self.__processedTasksIds)
+        return len(self.processedTasksIds)
+
+    def getPeriod(self):
+        return self.PERIOD_DURATION
 
     def getPeriod(self):
         return self.__PERIOD_DURATION
 
     def getResource(self):
-        return self.__resource
+        return self.resource
 
     def getInstanceId(self):
-        return self.__instanceId
+        return self.instanceId
 
     def setInstanceId(self, instanceId):
-        self.__instanceId = instanceId
+        self.instanceId = instanceId
 
     def getId(self):
-        return self.__resource.getId()
+        return self.resource.getId()
 
     def getInstanceStartTime(self):
-        return self.__instanceStartTime
+        return self.instanceStartTime
 
     def getMIPS(self):
-        return self.__resource.getMIPS()
+        return self.resource.getMIPS()
 
     def getBandwidthDuration(self, node):
         duration = 0
         for parent in node.getParents():
-            if not parent.getId() in self.__processedTasksIds:
+            if not parent.getId() in self.processedTasksIds:
                 tt = float(parent.getDataSize()) / (Constants.BANDWIDTH * 1.0)
                 if tt > duration:
                     duration = tt
@@ -58,106 +64,104 @@ class CloudAcoResourceInstance:
         return round(runtime + self.getBandwidthDuration(node))
 
     def getInstanceRemainingTime(self, time):
-        return max(self.__instanceFinishTime - time, 0)
+        return max(self.instanceFinishTime - time, 0)
 
     def getNewStartTime(self, node, env):
         max_AFT = 0
         for parent in node.getParents():
-            parentNode = env.getProblemGraph().getGraph().getNodes().get(parent.getId())
+            parentNode = env._graph.nodes.get(parent.getId())
             if parentNode.getAFT() >= max_AFT:
                 max_AFT = parentNode.getAFT() + self.getBandwidthDuration(node)
         return round(max_AFT)
 
     def getInstanceReleaseTime(self):
-        return self.__currentStartTime + self.__currentTaskDuration
+        return self.currentStartTime + self.currentTaskDuration
 
-    def setCurrentTask(self, cloudAcoProblemNode, env, curt):
+    def setCurrentTask(self, cloudAcoProblemNode, env, curt, finished, ant):
         node = curt
-        if str(node.getId()).lower() == "start" or str(
-                node.getId()).lower() == "end":
+
+        if str(node.id).lower() == "start" or str(node.id).lower() == "end":
             return
 
-        newTaskDuration = self.getTaskDuration(node)
-        countOfHoursToProvision = max(
-            int(ceil(
-                (newTaskDuration - self.getInstanceRemainingTime(node.getEST())) / (self.__PERIOD_DURATION * 1.0))),
-            0)
-        addedTimeToProvision = (countOfHoursToProvision * self.__PERIOD_DURATION)
+        # newTaskDuration = h_matrix[node.matrixid][self.instanceId].duration
+        newTaskDuration = round(node.instructionSize / self.resource.MIPS)
+        countOfHoursToProvision = max(int(ceil((newTaskDuration - max(self.instanceFinishTime - node.EST, 0)) / (self.PERIOD_DURATION * 1.0))), 0)
+        addedTimeToProvision = (countOfHoursToProvision * self.PERIOD_DURATION)
 
-        if self.__currentTask is None:
-            self.__instanceStartTime = max(self.getNewStartTime(node, env), 0)  # node.getEST()
-            self.__instanceFinishTime = addedTimeToProvision
-            self.__currentStartTime = max(self.getNewStartTime(node, env), 0)
-            self.__currentTaskDuration = newTaskDuration
+        if self.currentTask is None:
+            self.instanceStartTime = finished[node.id]
+            self.taskStart = finished[node.id]
+            self.instanceFinishTime = addedTimeToProvision
+            self.currentStartTime = round(finished[node.id] + newTaskDuration)
+            self.currentTaskDuration = newTaskDuration
             self.totalDuration += newTaskDuration
             self.totaltime = countOfHoursToProvision
-            self.__currentTask = node
-            self.__totalCost += countOfHoursToProvision * self.__resource.getCost()
-            # if cloudAcoProblemNode.getInstanceId() == 192:
-            #     print("first")
-            # if cloudAcoProblemNode.getInstanceId() == 194:
-            #     print("22222")
-            # if cloudAcoProblemNode.getInstanceId() == 196:
-            #     print("333333")
+            self.currentTask = node
+            self.totalCost += countOfHoursToProvision * self.resource.costPerInterval
 
-            if cloudAcoProblemNode.getInstanceId()+1 != env.getProblemGraph().getGraph().getMaxParallel() and not cloudAcoProblemNode.getInstanceId()+1 >= env.getProblemGraph().getGraph().getMaxParallel() * env.getProblemGraph().getResourceSet().getSize():
-                tmp = CloudAcoResourceInstance(cloudAcoProblemNode.getResource(), cloudAcoProblemNode.getInstanceId()+1)
-                env.getProblemGraph().getProblemNodeList().append(tmp)
+            if cloudAcoProblemNode.instanceId + 1 != env._graph.maxParallel and not cloudAcoProblemNode.instanceId + 1 >= env._graph.maxParallel * env._resources.size:
+                newinst = CloudAcoResourceInstance(cloudAcoProblemNode.resource, cloudAcoProblemNode.instanceId + 1)
+                ant.problemNodeList.append(newinst)
 
         else:
-            remain = self.getInstanceRemainingTime(self.getInstanceReleaseTime())
-            countOfHoursToProvision = max(int(round((newTaskDuration - remain) / float(self.__PERIOD_DURATION))), 0)
-            addedTimeToProvision = (countOfHoursToProvision * self.__PERIOD_DURATION)
-            self.__instanceFinishTime += addedTimeToProvision
-            self.__currentStartTime = max(self.getNewStartTime(node, env), self.__currentTask.getAFT())       # it shoudn't be last node.AFT ??
-            # self.__currentStartTime = max(int(self.getInstanceReleaseTime()), node.getEST())  # for id05  is (15, 21)
-            self.__currentTaskDuration = newTaskDuration
+            remain = self.instanceFinishTime - self.totalDuration
+            countOfHoursToProvision = max(int(round((newTaskDuration - remain) / float(self.PERIOD_DURATION))), 0)
+            addedTimeToProvision = (countOfHoursToProvision * self.PERIOD_DURATION)
+            self.instanceFinishTime += addedTimeToProvision
+            self.taskStart = max(finished[node.id], self.currentStartTime)
+            self.currentStartTime = round(self.taskStart + newTaskDuration)
+            self.currentTaskDuration = newTaskDuration
             self.totalDuration += newTaskDuration
             self.totaltime += countOfHoursToProvision
-            self.__currentTask = node
-            self.__totalCost += countOfHoursToProvision * self.__resource.getCost()
+            self.currentTask = node
+            self.totalCost += countOfHoursToProvision * self.resource.getCost()
 
-        node.setAST(int(round(self.__currentStartTime)))
-        node.setAFT(int(round(self.__currentStartTime + newTaskDuration)))
-        node.setRunTime(newTaskDuration)
-        node.setSelectedResource(self)
-        node.setSelectedInstance(self.__instanceId)
-        # node.setSelectedResource(self.getId())
+        antNode = {}
+        antNode["id"] = node.id
+        antNode["AST"] = int(round(self.taskStart))
+        antNode["AFT"] = int(round(self.taskStart + newTaskDuration))
+        antNode["runTime"] = newTaskDuration
+        # antNode["selectedResource"] = self
+        antNode["selectedInstance"] = self.instanceId
 
-        node.setScheduled()
-        self.__processedTasks.append(node)
-        self.__processedTasksIds.add(node.getId())
+        # antNode["scheduled"] = True
+        self.processedTasks.append(node)
+        self.processedTasksIds.add(node.id)
+        return antNode
+
 
     def getTotalCost(self):
-        return self.__totalCost
+        return self.totalCost
 
-    def getCost(self, node):
-        newTaskDuration = self.getTaskDuration(node)
-        countOfHoursToProvision = int(ceil(newTaskDuration / float(self.__PERIOD_DURATION)))
+    def getCost(self, newTaskDuration):
+        countOfHoursToProvision = int(ceil(newTaskDuration / float(self.PERIOD_DURATION)))
 
-        if countOfHoursToProvision == 0:  # we don't need this becouse it's alwayes 1 at Least
+        if countOfHoursToProvision == 0:
             countOfHoursToProvision = 1
-        # not started yet!
-        if self.__currentTask is None:
+
+        if self.currentTask is None:
             return self.getResource().getCost() * countOfHoursToProvision
         else:
             if newTaskDuration <= self.getInstanceRemainingTime(self.getInstanceReleaseTime()):
                 return 0
             else:
                 lack = newTaskDuration - self.getInstanceRemainingTime(self.getInstanceReleaseTime())
-                countOfHoursToProvision = int(ceil(lack / float(self.__PERIOD_DURATION)))
-                return countOfHoursToProvision * self.__resource.getCost()
+                countOfHoursToProvision = int(ceil(lack / float(self.PERIOD_DURATION)))
+                return countOfHoursToProvision * self.resource.getCost()
 
     def reset(self):
-        self.__totalCost = 0
+
+        self.totalCost = 0
         self.totalDuration = 0
-        self.__instanceStartTime = 0
-        self.__currentTask = None
-        self.__currentTaskDuration = 0
-        self.__instanceFinishTime = 0
-        self.__processedTasks = []
-        self.__currentStartTime = 0
-        self.__processedTasksIds.clear()
+        self.instanceStartTime = 0
+        self.currentTask = None
+        self.currentTaskDuration = 0
+        self.instanceFinishTime = 0
+        self.processedTasks = []
+        self.currentStartTime = 0
+        self.taskStart = 0
+        self.processedTasksIds.clear()
+
 
     def getInstanceFinishTime(self):
-        return self.__instanceFinishTime
+        return self.instanceFinishTime

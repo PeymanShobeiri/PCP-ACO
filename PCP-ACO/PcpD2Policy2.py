@@ -1,43 +1,20 @@
-import sys
+from ACO.CloudAcoResourceInstanceSet import CloudAcoResourceInstanceSet
+from CloudACO import CloudACO
+from ypstruct import structure
 from WorkflowPolicy import WorkflowPolicy
 from Instance import Instance
 from WorkflowNode import WorkflowNode
 from math import ceil, floor
+from prettytable import PrettyTable
+import time
+import sys
 
 
 class PcpD2Policy2(WorkflowPolicy):
     def __init__(self, g, rs, bw):
         super().__init__(g, rs, bw)
-
-    class result:
-        cost = None
-        finishTime = None
-
-    class PriorityQueue(object):
-        def __init__(self):
-            self.queue = []
-
-        def __str__(self):
-            return ' '.join([str(i) for i in self.queue])
-
-        def isEmpty(self):
-            return len(self.queue) == 0
-
-        def insert(self, data):
-            self.queue.append(data)
-
-        def remove(self):  # check for time complexity !!!
-            try:
-                max = 0
-                for i in range(len(self.queue)):
-                    if self.queue[i].getUpRank() > self.queue[max].getUpRank():
-                        max = i
-                item = self.queue[max]
-                del self.queue[max]
-                return item
-            except IndexError:
-                print('Error !!!')
-                exit()
+        self.sortedWorkflowNodes = self.topologicalSort()
+        self.problemNodeList = None
 
     def findCriticalParent(self, child):
         criticalPar = None
@@ -69,61 +46,18 @@ class PcpD2Policy2(WorkflowPolicy):
         return criticalPath
 
     def assignPath(self, path):
-        # last = self._graph.getNodes().get(self._graph.getEndId())
         last = len(path) - 1
         pathEST = path[0].getEST()
         pathEFT = path[last].getEFT()
-        # pathEFT = last.getEFT()
         PSD = path[last].getLFT() - pathEST
-        # PSD = last.getLFT() - pathEST
         i = 0
         while i <= len(path) - 1:
             curNode = path[i]
-            ########################
             subDeadline = pathEST + int(floor(float(curNode.getEFT() - pathEST) / float(pathEFT - pathEST) * PSD))
 
             curNode.setDeadline(subDeadline)
             curNode.setScheduled()
-
-            # if i > 0:
-            #     newEST = path[i - 1].getDeadline() + round(
-            #         float(self.getDataSize(path[i - 1], curNode)) / self._bandwidth)
-            #     if newEST > curNode.getEST():
-            #         curNode.setEST(newEST)
-            #         curNode.setEFT(newEST + curNode.getRunTime())
             i += 1
-
-    # def updateChildrenEST(self, parentNode):
-    #     for child in parentNode.getChildren():
-    #         childNode = self._graph.getNodes().get(child.getId())
-    #         newEST = None
-    #
-    #         if not childNode.isScheduled():
-    #             if parentNode.isScheduled():
-    #                 newEST = parentNode.getDeadline() + round(float(child.getDataSize() / self._bandwidth))
-    #             else:
-    #                 newEST = parentNode.getEFT() + round(float(child.getDataSize()) / self._bandwidth)
-    #
-    #             if childNode.getEST() < newEST:
-    #                 childNode.setEST(newEST)
-    #                 childNode.setEFT(int(newEST + round(childNode.getRunTime())))
-    #                 self.updateChildrenEST(childNode)
-
-    # def updateParentsLFT(self, childNode):
-    #     for parent in childNode.getParents():
-    #         parentNode = self._graph.getNodes().get(parent.getId())
-    #         newLFT = None
-    #
-    #         if not parentNode.isScheduled():
-    #             # if childNode.isScheduled():
-    #             #     newLFT = round(childNode.getEST() - float(parent.getDataSize()) / self._bandwidth)
-    #             # else:
-    #             newLFT = round(childNode.getLST() - float(parent.getDataSize()) / self._bandwidth)
-    #
-    #             if parentNode.getLFT() > newLFT:
-    #                 parentNode.setLFT(newLFT)
-    #                 parentNode.setLST(int(newLFT - round(parentNode.getRunTime())))
-    #                 self.updateParentsLFT(parentNode)
 
     def assignParents(self, curNode):
         criticalPath = []
@@ -134,127 +68,45 @@ class PcpD2Policy2(WorkflowPolicy):
 
         self.assignPath(criticalPath)
         for i in range(len(criticalPath)):
-            # self.updateChildrenEST(criticalPath[i])
-            # self.updateParentsLFT(criticalPath[i])
             self.assignParents(criticalPath[i])
-
-        # for i in range(len(criticalPath)):
-        #     self.assignParents(criticalPath[i])
 
         self.assignParents(curNode)
 
     def distributeDeadline(self):
+        # Use PCP for deadline Distribution
         self.assignParents(self._graph.getNodes().get(self._graph.getEndId()))
-        # je suis ici
         self._graph.getNodes().get(self._graph.getEndId()).setDeadline(0)
         for node in self._graph.getNodes().values():
             node.setUnscheduled()
 
-    def checkInstance(self, curNode, curInst):
-        finishTime = curInst.getFinishTime()
-        startTime = curInst.getStartTime()
-        interval = self._resources.getInterval()
-        curCost = ceil(float(finishTime - startTime) / float(interval)) * curInst.getType().getCost()
-        curIntervalFinish = startTime + int(ceil(float(finishTime - startTime) / float(interval)) * interval)
-        start = None
-        curStart = int(finishTime)
-        curFinish = None
-
-        for parent in curNode.getParents():
-            parentNode = self._graph.getNodes().get(parent.getId())
-
-            start = parentNode.getEFT()
-            if parentNode.getSelectedResource() != curInst.getId():
-                start += round(float(parent.getDataSize()) / self._bandwidth)
-            if start > curStart:
-                curStart = start
-
-        if finishTime == 0:
-            startTime = curStart
-
-        r = self.result()
-        curFinish = int(curStart + round(float(curNode.getInstructionSize()) / curInst.getType().getMIPS()))
-        r.finishTime = curFinish
-        if (finishTime != 0 and curStart > curIntervalFinish) or curFinish > curNode.getDeadline():
-            r.cost = sys.maxsize
-        else:
-            r.cost = float(ceil(float(curFinish - startTime) / float(interval)) * curInst.getType().getCost() - curCost)
-
-        return r
-
-    def setInstance(self, curNode, curInst):
-        start = None
-        curStart = int(curInst.getFinishTime())
-        curFinish = None
-
-        for parent in curNode.getParents():
-            parentNode = self._graph.getNodes().get(parent.getId())
-
-            start = parentNode.getEFT()
-            if parentNode.getSelectedResource() != curInst.getId():
-                start += round(float(parent.getDataSize()) / self._bandwidth)
-            if start > curStart:
-                curStart = start
-
-        curFinish = curStart + round(float(curNode.getInstructionSize()) / curInst.getType().getMIPS())
-        curNode.setEST(curStart)
-        curNode.setEFT(curFinish)
-        curNode.setSelectedResource(curInst.getType().getId())
-        curNode.setScheduled()
-
-        if curInst.getFinishTime() == 0:
-            curInst.setStartTime(curStart)
-            curInst.setFirstTask(curNode.getId())
-
-        curInst.setFinishTime(curFinish)
-        curInst.setLastTask(curNode.getId())
-
-    def planning(self):
-        queue = self.PriorityQueue()
-        r = self.result()
-        bestFinish = sys.maxsize
-
+    def topologicalSort(self):
         self.computeUpRank()
-        for node in self._graph.nodes.values():
-            if not node.getId() == self._graph.getStartId() and not node.getId() == self._graph.getEndId():
-                queue.insert(node)
+        workflowNodes = sorted(self._graph.getNodes().values(), key=lambda item: item.getUpRank(), reverse=True)
+        return workflowNodes
 
-        while not queue.isEmpty():
-            curNode = queue.remove()
-            bestInst = -1
-            bestCost = sys.maxsize
+    def createProblemNodeList(self):
+        problemNodeList = []
+        mId = 0
 
-            for curInst in range(self._instances.getSize()):
-                r = self.checkInstance(curNode, self._instances.getInstance(curInst))
-                if r.cost < bestCost:
-                    bestCost = r.cost
-                    bestFinish = r.finishTime
-                    bestInst = curInst
-                elif bestCost < sys.maxsize and r.cost == bestCost and r.finishTime < bestFinish:
-                    bestFinish = r.finishTime
-                    bestInst = curInst
+        for instances in self._instances.getInstances():
+            # for instance in instances:
+            problemNodeList.append(instances)
 
-            curRes = self._resources.getSize() - 1
-            # because the cheapest one is the last
-            while curRes >= 0:
-                inst = Instance(self._instances.getSize(), self._resources.getResource(curRes))
-                r = self.checkInstance(curNode, inst)
-                if r.cost < bestCost:
-                    bestCost = r.cost
-                    bestFinish = r.finishTime
-                    bestInst = 10000 + curRes
-                elif bestCost < sys.maxsize and r.cost == bestCost and r.finishTime < bestFinish:
-                    bestFinish = r.finishTime
-                    bestInst = 10000 + curRes
-                curRes -= 1
+        for curNode in self.sortedWorkflowNodes:
+            if curNode.getId() == "start":
+                self._graph.startNode = curNode
+                curNode.setMatrixId(0)
+                curNode.setSelectedResource(problemNodeList[-1])
 
-            if bestInst < 10000:
-                self.setInstance(curNode, self._instances.getInstance(bestInst))
+            elif curNode.getId() == "end":
+                self._graph.endNodeId = curNode
+                curNode.setMatrixId(mId)
+                curNode.setSelectedResource(problemNodeList[-1])
             else:
-                bestInst -= 10000
-                inst = Instance(self._instances.getSize(), self._resources.getResource(bestInst))
-                self._instances.addInstance(inst)
-                self.setInstance(curNode, inst)
+                curNode.setMatrixId(mId)
+                mId += 1
+
+        return problemNodeList
 
     def setEndNodeEST(self):
         endTime = -1
@@ -268,17 +120,41 @@ class PcpD2Policy2(WorkflowPolicy):
         endNode.setEST(endTime)
         endNode.setEFT(endTime)
 
+    def saveSolution(self, best):
+        myTable = PrettyTable(["N", "I", "AST", "runtime", "AFT", "LFT"])
+        for node in best.solution:
+            if node is None:
+                continue
+
+            myTable.add_row([str(node["id"]), str(node["selectedInstance"]),
+                             str(node["AST"]),
+                             str(node["runTime"]), str(node["AFT"]),
+                             str(node["LFT"])])
+        print(myTable)
+
     def schedule(self, startTime, deadline):
         cost = None
 
-        self.setRuntimes()
         self.computeESTandEFT(startTime)
         self.computeLSTandLFT(deadline)
         self.initializeStartEndNodes(startTime, deadline)
 
+        # Use PCP for deadline distribution
         self.distributeDeadline()
-        self.planning()
+        self._graph.setMaxParallel(self.FindMaxParallel())
 
-        self.setEndNodeEST()
-        cost = super().computeFinalCost()
-        return cost
+        # Create the first type of each instance with its id
+        self._instances = CloudAcoResourceInstanceSet(self._resources, self._graph.getMaxParallel())
+
+        # Create problem node list
+        self.problemNodeList = self.createProblemNodeList()
+
+        # Create cloud ACO instance for running the ACO in order to find the best resource for each node
+        cloudACO = CloudACO()
+        Start_Time = round(time.time())
+        best = cloudACO.schedule(self, deadline)
+        Finish_Time = round(time.time())
+        print(" The total time is : " + str(Finish_Time - Start_Time))
+
+        self.saveSolution(best)
+

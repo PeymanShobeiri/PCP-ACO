@@ -4,63 +4,32 @@ from Link import Link
 class WorkflowNode:
     def __init__(self, nodeId, nodeName='', inSize=0, outSize=0, rt=0):
 
-        # print(type(nodeId))
-        if type(nodeId) == str:
-            self.id = nodeId
-            self.matrixid = None
-            self.name = nodeName
-            self.inputFileSize = inSize
-            self.outputFileSize = outSize
-            self.instructionSize = 0  # this is in MI units
-            self.runTime = rt
-            self.topologicaSortCount = 0
-            self.DAG_level = 0
-            self.numPE = None
-            self.parents = []  # both LINK type
-            self.children = []
+        self.id = nodeId
+        # self.matrixid = None
+        self.name = nodeName
+        self.inputFileSize = inSize
+        self.outputFileSize = outSize
+        self.instructionSize = 0  # this is in MI units
+        self.runTime = rt
+        self.topologicaSortCount = 0
+        self.DAG_level = 0
+        self.numPE = None
+        self.parents = []  # both LINK type
+        self.children = []
 
-            # for scheduling part
-            self.scheduled = False
-            self.EST = None
-            self.EFT = None
-            self.AST = None
-            self.AFT = None
-            self.LFT = None
-            self.LST = None
-            self.MET = None
-            self.upRank = None
-            self.subDeadline = None
-            self.selectedInstance = -1
-            self.selectedResource = -1
-        else:
-            self.id = nodeId.id
-            self.matrixid = nodeId.matrixid
-            self.name = nodeId.name
-            self.inputFileSize = nodeId.inputFileSize
-            self.outputFileSize = nodeId.outputFileSize
-            self.runTime = nodeId.runTime
-            self.topologicaSortCount = 0
-            self.DAG_level = nodeId.getDAG_level()
-            self.numPE = None
-            self.instructionSize = nodeId.instructionSize
-            self.scheduled = nodeId.scheduled
-            self.EST = nodeId.EST
-            self.EFT = nodeId.EFT
-            self.LST = nodeId.LST
-            self.AST = nodeId.AST
-            self.AFT = nodeId.AFT  # needed ?
-            self.LFT = nodeId.LFT
-            self.MET = nodeId.MET
-            self.upRank = nodeId.upRank
-            self.subDeadline = nodeId.subDeadline
-            self.selectedInstance = nodeId.selectedInstance
-            self.selectedResource = nodeId.selectedResource
-            self.parents = []
-            for l in nodeId.parents:
-                self.parents.append(Link(l.getId(), l.getDataSize()))
-            self.children = []
-            for l in nodeId.children:
-                self.children.append(Link(l.getId(), l.getDataSize()))
+        # for scheduling part
+        self.scheduled = False
+        self.EST = None
+        self.EFT = None
+        self.AST = None
+        self.AFT = None
+        self.LFT = None
+        self.LST = None
+        self.MET = None
+        self.upRank = None
+        self.subDeadline = None
+        self.selectedInstance = -1
+        self.selectedResource = -1
 
     def getMatrixId(self):
         return self.matrixid
@@ -68,7 +37,7 @@ class WorkflowNode:
     def setMatrixId(self, id):
         self.matrixid = id
 
-    def setSelectedInstance(self,ins):
+    def setSelectedInstance(self, ins):
         self.selectedInstance = ins
 
     def getSelectedInstance(self):
@@ -77,8 +46,8 @@ class WorkflowNode:
     def getTopologicaSortCount(self):
         return self.topologicaSortCount
 
-    def getNeighbourhood(self, environment):
-        return environment.getProblemGraph().getNeighbours(self)
+    def getNeighbourhood(self, environment, indx):
+        return environment.sortedWorkflowNodes[environment.sortedWorkflowNodes[indx] + 1]
 
     def getDAG_level(self):
         return self.DAG_level

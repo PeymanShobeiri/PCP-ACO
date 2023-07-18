@@ -218,8 +218,6 @@ class CloudAcoProblemRepresentation:
         return self.__resourceSet
 
     def resetNodes(self):
-        # self.__graph.setNodes(self.__defultNodes)
-        # self.__sortedWorkflowNodes = self.__dsortflow
         for node in self.__graph.getNodes().items():
             curnode = node[1]
             if curnode.id == "start" or curnode.id == "end":
@@ -232,7 +230,6 @@ class CloudAcoProblemRepresentation:
                 curnode.AFT = 0
             else:
                 curnode.AFT = None
-            # curnode = self.__defultNodes[node[0]]
 
     def getNeighbours(self, node):
         return self.__sortedWorkflowNodes[self.__sortedWorkflowNodes.index(node) + 1]

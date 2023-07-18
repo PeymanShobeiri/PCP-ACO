@@ -1,7 +1,4 @@
 import sys
-
-sys.path.append('/Users/apple/Desktop/Create WS-ACO/MyCode')
-
 import DAG
 from WorkflowNode import WorkflowNode
 from Constants import Constants
@@ -10,12 +7,12 @@ from DAG.LinkageType import LinkageType
 
 class WorkflowGraph:
     def __init__(self):
-        self.__startNodeId = "start"
-        self.__endNodeId = "end"
-        self.__jobNumPE = 1
+        self.startNode = "start"
+        self.endNodeId = "end"
+        # self.__jobNumPE = 1
         self.nodes = {}
-        self.__nodeNum = 0
-        self.__maxParallel = 0
+        self.nodeNum = 0
+        self.maxParallel = 0
 
     def __computeIOsize(self, dag, parentId, childId):
         size = 0
@@ -98,7 +95,7 @@ class WorkflowGraph:
                 runTime = 1
             wfNode = WorkflowNode(job.getId(), job.getName(), inputFilesSize, outputFilesSize, runTime)
             wfNode.setInstructionSize(runTime * Constants().STANDARD_MIPS)
-            wfNode.setNumPE(self.__jobNumPE)
+            # wfNode.setNumPE(self.__jobNumPE)
             self.nodes[job.getId()] = wfNode
 
         for child in dag.getChildList():
@@ -111,8 +108,8 @@ class WorkflowGraph:
                 self.nodes[childId].addParent(parent.getRef(), IOsize)  # you can make it two part if didn't work
                 self.nodes.get(parent.getRef()).addChild(childId, IOsize)  # same thing here
 
-        startNode = WorkflowNode(self.__startNodeId, self.__startNodeId, 0, 0, 0)
-        endNode = WorkflowNode(self.__endNodeId, self.__endNodeId, 0, 0, 0)
+        startNode = WorkflowNode(self.startNode, self.startNode, 0, 0, 0)
+        endNode = WorkflowNode(self.endNodeId, self.endNodeId, 0, 0, 0)
         startNode.setInstructionSize(0)
         endNode.setInstructionSize(0)
         startNode.setNumPE(0)
@@ -125,19 +122,19 @@ class WorkflowGraph:
                 node.addChild(endNode.getId(), 0)
                 endNode.addParent(node.getId(), 0)
 
-        self.nodes[self.__startNodeId] = startNode
-        self.nodes[self.__endNodeId] = endNode
-        self.__nodeNum = len(self.nodes)
+        self.nodes[self.startNode] = startNode
+        self.nodes[self.endNodeId] = endNode
+        self.nodeNum = len(self.nodes)
 
         self.unifyRunTimes()
 
         return True
 
     def getMaxParallel(self):
-        return self.__maxParallel
+        return self.maxParallel
 
     def setMaxParallel(self, maxParallel):
-        self.__maxParallel = maxParallel
+        self.maxParallel = maxParallel
 
     def getNodes(self):
         return self.nodes
@@ -146,10 +143,10 @@ class WorkflowGraph:
         self.nodes = newNodes
 
     def getStartId(self):
-        return self.__startNodeId
+        return self.startNode
 
     def getEndId(self):
-        return self.__endNodeId
+        return self.endNodeId
 
     def getNodeNum(self):
-        return self.__nodeNum
+        return self.nodeNum

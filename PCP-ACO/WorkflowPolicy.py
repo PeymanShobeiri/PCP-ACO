@@ -3,26 +3,18 @@ import sys
 from queue import Queue
 from WorkflowNode import WorkflowNode
 from math import ceil, floor
-import zope.interface
-import matplotlib.pyplot as plt
 
 
-class WorkflowPolicy(object):
+class WorkflowPolicy:
     def __init__(self, g, rs, bw):
-        self._MB = 1000000
-        self._pricePerMB = 0
         self._graph = g
         self._resources = rs
-        self._instances = InstanceSet(self._resources)
+        self._instances = None
         self._bandwidth = bw
-
-    # abstract public float schedule(int startTime, int deadline);
 
     def setRuntimes(self):
         maxMIPS = self._resources.getMaxMIPS()
         for node in self._graph.getNodes().values():
-            #  MET can be calculate here ! :)
-            # test = round(node.getInstructionSize() / maxMIPS)
             node.setRunTime(round(node.getInstructionSize() / maxMIPS))
 
     def computeLSTandLFT(self, deadline):
@@ -152,12 +144,17 @@ class WorkflowPolicy(object):
             maxTime = -1
             for child in curNode.getChildren():
                 childNode = nodes.get(child.getId())
-                thisTime = childNode.getUpRank() + round(float(child.getDataSize() / self._bandwidth))
+                thisTime = round(childNode.getUpRank() + float(child.getDataSize() / self._bandwidth))
+                # print(str(child.getId()) + " " + str(round(child.getDataSize() / self._bandwidth)))
                 if thisTime > maxTime:
                     maxTime = thisTime
 
             maxMIPS = self._resources.getMeanMIPS()
             maxTime += round(float(curNode.getInstructionSize() / maxMIPS))
+
+            if curNode.getId() == "start":
+                maxTime += 1
+
             curNode.setUpRank(maxTime)
             curNode.setScheduled()
 
@@ -197,8 +194,10 @@ class WorkflowPolicy(object):
     def initializeStartEndNodes(self, startTime, deadline):
         nodes = self._graph.getNodes()
 
-        nodes.get(self._graph.getStartId()).setAST(0)
-        nodes.get(self._graph.getEndId()).setAST(deadline)
+        nodes.get(self._graph.getStartId()).setDeadline(0)
+        nodes.get(self._graph.getStartId()).setAFT(0)
+
+        nodes.get(self._graph.getEndId()).setDeadline(deadline)
 
         nodes.get(self._graph.getStartId()).setScheduled()
         nodes.get(self._graph.getEndId()).setScheduled()
@@ -259,4 +258,3 @@ class WorkflowPolicy(object):
 
         return totalCost
 
-    ##### UpRankComparator -- ASTComparator -- childComparator -- allChildComparator

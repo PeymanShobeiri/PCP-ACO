@@ -3,24 +3,24 @@ from ACO.CloudAcoResourceInstance import CloudAcoResourceInstance
 
 
 class CloudAcoResourceInstanceSet:
-    # instances = {}
-    # count = None
 
-    def initialize(self, resources):
+    def initialize(self, resources, count):
         id = 0
         coef = 1
         for j in range(resources.getSize()):
             resource = resources.getResource(j)
-            instances = []
-            instances.append(CloudAcoResourceInstance(resource, id))
-            id = coef * self.count
+            tmp = {"instanceId": id, "resource": resource, "currentTask": None,
+                   "currentTaskDuration": 0, "totalDuration": 0, "totaltime": 0, "processedTasks": [],
+                   "processedTasksIds": set(), "currentStartTime": 0, "instanceFinishTime": 0.0, "totalCost": 0,
+                   "instanceStartTime": None, "taskStart": 0}
+            id = coef * count
             coef += 1
-            self.instances[resource] = instances
+            self.instances.append(tmp)
 
     def __init__(self, resources, count):
-        self.count = count
-        self.instances = {}
-        self.initialize(resources)
+
+        self.instances = []
+        self.initialize(resources, count)
 
     def getInstances(self):
         return self.instances
@@ -29,10 +29,7 @@ class CloudAcoResourceInstanceSet:
         if len(self.instances) > 0 and index < len(self.instances):
             return self.instances[index]
 
-    def getCount(self):
-        return self.count
-
-    def getFinishTime(self):  # Atomic  ?? what the ....
+    def getFinishTime(self):
         max = -1
         for instances in self.instances.values():
             for instance in instances:
@@ -42,6 +39,5 @@ class CloudAcoResourceInstanceSet:
         return max
 
     def resetPerAnt(self):
-        for instances in self.instances.values():
-            for instance in instances:
-                instance.reset()
+        for instance in self.instances:
+            instance.reset()
