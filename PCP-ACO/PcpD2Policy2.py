@@ -134,7 +134,7 @@ class PcpD2Policy2(WorkflowPolicy):
                              str(node["LFT"])])
         print(myTable)
 
-    def schedule(self, startTime, deadline, IC_PCP):
+    def schedule(self, startTime, deadline):
         cost = None
         self.setRuntimes()
 
@@ -154,10 +154,9 @@ class PcpD2Policy2(WorkflowPolicy):
 
         # Create cloud ACO instance for running the ACO in order to find the best resource for each node
         cloudACO = CloudACO()
-        Start_Time = round(time.time())
-        best = cloudACO.schedule(self, deadline, IC_PCP)
-        Finish_Time = round(time.time())
-        print(" The total time is : " + str(Finish_Time - Start_Time))
+        best = cloudACO.schedule(self, deadline)
+
+        # Display the utilization of resources
         print("the Utils of best ant is : " + str(best.Utils))
 
         self.saveSolution(best)

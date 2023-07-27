@@ -9,7 +9,7 @@ class CheapestPolicy(WorkflowPolicy):
     def __init__(self, g, rs, bw):
         super().__init__(g, rs, bw)
 
-    def schedule(self, startTime, deadline, IC_PCP):
+    def schedule(self, startTime, deadline):
         minMIPS = self._resources.getMinMIPS()
         minCost = self._resources.getMinCost()
         totalCost = 0.0

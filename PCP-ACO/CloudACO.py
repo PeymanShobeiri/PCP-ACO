@@ -53,35 +53,19 @@ class CloudACO:
             currentST = max(candidateNodes[i]["instanceFinishTime"], finished[curtask.id])
             currentFT = currentST + currentDuration
 
-            # Cache = str(currentDuration)+str(currentST)+str(candidateNodes[i]["instanceId"])+str(curtask.subDeadline)+str(curCost)
-            # Cache = self.HeuristicCondition(currentDuration, curCost, currentST, candidateNodes[i]["instanceId"], curtask.subDeadline)
-            # Cache = structure()
-            # Cache.duration = currentDuration
-            # Cache.ST = currentST
-            # Cache.ID = candidateNodes[i]["instanceId"]
-            # Cache.deadline = curtask.subDeadline
-            # Cache.Cost = curCost
-
             if not str(curtask.id) == "end" and not str(curtask.id) == "start":
                 if currentFT > curtask.LFT:
                     result = 0.0
                     sw = 1
 
-            # if Cache in self.heuristicCache:
-            #     result = self.CacheValues[str(currentDuration)+str(currentST)+str(candidateNodes[i]["instanceId"])+str(curtask.subDeadline)+str(curCost)]
-            #     sw = 2
-
             if sw == 0:
                 h1 = 0.0
                 h2 = 0.0
-
-                bad = False
 
                 if currentFT <= curtask.subDeadline:
                     h1 = 1
                 else:
                     h1 = max(0, (((curtask.LFT - currentFT) + 1) / ((curtask.LFT - curtask.subDeadline) + 1)))
-                    bad = True
 
                 maxCost = 1.00
                 minCost = 0.12
@@ -94,14 +78,7 @@ class CloudACO:
 
                 result = ((h1 * p1) + (h2 * p2)) / ratio
 
-                # if bad:
-                #     result = result ** 2
-
-            # self.heuristicCache.append(Cache)
-            # self.CacheValues[str(currentDuration)+str(currentST)+str(candidateNodes[i]["instanceId"])+str(curtask.subDeadline)+str(curCost)] = result
-
-            probability.append((result ** self.H_RATIO) * (
-                    self.pheromone[curtask.matrixid][candidateNodes[i]["instanceId"]] ** self.P_RATIO))
+            probability.append((result ** self.H_RATIO) * (self.pheromone[curtask.matrixid][candidateNodes[i]["instanceId"]] ** self.P_RATIO))
             if probability[i] >= best:
                 best = probability[i]
                 bestIndex = i
@@ -127,7 +104,6 @@ class CloudACO:
 
         return node
 
-        # return candidates[random.randint(0, len(candidates) + 1)]
 
     def getSolutionCost(self, tmp):
         usedTime = 0
@@ -163,17 +139,7 @@ class CloudACO:
 
         return problemNodeList
 
-    def IC_PCP_phase(self, ICPCP):
-        value = self.EVAP_RATIO * (1 / ICPCP.cost)  # + 0.09
-        for sol in ICPCP.solution.items():
-            if sol[0] == "end" or sol[0] == "start":
-                continue
-            test = int(sol[0].split("ID")[1])
-            test2 = sol[1]
-            self.pheromone[int(sol[0].split("ID")[1])][sol[1]] = ((self.pheromone[int(sol[0].split("ID")[1])][
-                sol[1]]) * (1 - self.EVAP_RATIO)) + value
-
-    def schedule(self, environment, deadline, IC_PCP):
+    def schedule(self, environment, deadline):
         self.environment = environment
 
         # Empty Ant
@@ -192,16 +158,10 @@ class CloudACO:
         bestAnt.makeSpan = np.inf
         bestAnt.Utils = 0.0
 
-        # Creating colony
-        # ant = empty_ant.repeat(self.nAnt)
-
         # Pheromone Matrix
         self.pheromone = np.full(
             (environment._graph.nodeNum + 1, environment._resources.size * environment._graph.maxParallel), 0.12)
 
-        # # apply the IC_PCP initial pheremone
-        # self.IC_PCP_phase(IC_PCP)
-        print(IC_PCP)
         # ACO main loop
         for it in range(self.MaxIt):
             # Move Ants
@@ -229,6 +189,16 @@ class CloudACO:
                             dest = candidateNodes[bestOptionByProbability]
                         else:
                             dest = self.rwsSelection(candidateNodes, probability)
+
+                        start = 0
+                        for parent in curTask.parents:
+                            if parent.id == "start":
+                                continue
+                            parentNode = self.environment._graph.nodes[parent.id]
+                            if parentNode.selectedInstance != dest["instanceId"]:
+                                start += round(parent.dataSize / Constants.BANDWIDTH)
+                            if start > ant[j].finished[curTask.id]:
+                                ant[j].finished[curTask.id] = start
 
                         newTaskDuration = ceil(curTask.instructionSize / dest["resource"].MIPS)
                         countOfHoursToProvision = int(ceil((newTaskDuration - (dest["finishDuration"] - dest["totalDuration"])) / self.PERIOD_DURATION))
@@ -266,14 +236,11 @@ class CloudACO:
                     if ant[j].cost < bestAnt.cost and ant[j].makeSpan <= deadline:
                         bestAnt.solution = ant[j].solution
                         bestAnt.cost = ant[j].cost
-                        bestAnt.Utils = total_duration / (total_time)
+                        bestAnt.Utils = total_duration / total_time
                         bestAnt.makeSpan = ant[j].makeSpan
                         print("best ant: " + str(bestAnt.cost))
 
-                    # ant[j].solution = []
                     self.localUpdate(ant[j])
-                    # ant[j].problemNodeList = self.resetProblemNodeList()
-                    # ant[j].cost = 0.0
 
                 executor.map(run_ant, range(self.nAnt))
 

@@ -11,7 +11,7 @@ class FastestPolicy(WorkflowPolicy):
         workflowNodes = sorted(self._graph.getNodes().values(), key=lambda item: item.getUpRank(), reverse=True)
         return workflowNodes
 
-    def schedule(self, startTime, deadline, IC_PCP):
+    def schedule(self, startTime, deadline):
         xx = 0
         kk = 0
         self.setRuntimes()

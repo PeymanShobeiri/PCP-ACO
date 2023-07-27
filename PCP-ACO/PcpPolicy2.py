@@ -330,7 +330,7 @@ class PcpPolicy2(WorkflowPolicy):
 
         self.assignParents(curNode)
 
-    def schedule(self, startTime, deadline, IC_PCP):
+    def schedule(self, startTime, deadline):
         cost = None
 
         self.setRuntimes()

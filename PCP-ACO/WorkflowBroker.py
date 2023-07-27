@@ -53,8 +53,8 @@ class WorkflowBroker:
         elif type == "PCP_ACO":
             self.policy = PcpD2Policy2(self.graph, self.resources, self.bandwidth)
 
-    def schedule(self, startTime, deadline, ICPCP) -> float:
-        tmp = self.policy.schedule(startTime, deadline, ICPCP)
+    def schedule(self, startTime, deadline) -> float:
+        tmp = self.policy.schedule(startTime, deadline)
         return tmp
 
     def getGraph(self):
